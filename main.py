@@ -1,9 +1,37 @@
 import io
 import os
 import re
+from dataclasses import dataclass
 
 from nicegui import events, ui
 from PIL import Image
+
+
+@dataclass
+class Filepaths:
+    """Class that has file paths of user image, cover image, and output files"""
+
+    user_image_fe = ""
+    cover_image_fe = ""
+
+    def get_user_image_fp(self):
+        """Get file path for user iamge"""
+        return os.path.join("static", f"user_image.{self.user_image_fe}")
+
+    def get_cover_image_fp(self):
+        """Get file path for cover image"""
+        return os.path.join("static", f"cover_image.{self.cover_image_fe}")
+
+    def get_encrypted_image_output_path(self):
+        """Get file path for encrypted output image"""
+        return os.path.join("static", f"encrypt_output.{self.cover_image_fe}")
+
+    def get_decrypted_output_file_path(self, text=False):
+        """Get file path for decrypted output, either an image or text file"""
+        if text:
+            return os.path.join("static", "decrypted_output.txt")
+        else:
+            return os.path.join("static", f"decrypted_output.{self.cover_image_fe}")
 
 
 def placeholder_function():  # noqa: D103
@@ -56,19 +84,23 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
     param value: String with type of message will be encrypted. Will be "Text" or "Image".
     param text_input: Message to be encrypted into image
     """
+    print("Text input:", text_input)
     # File paths for all images
-    user_image_fp = "static/user_image.*"
-    cover_image_fp = "static/cover_image.*"
+    user_image_fp = "static/user_image.jpg"
+    cover_image_fp = "static/cover_image.jpg"
     # Open the cover image
     with Image.open(cover_image_fp) as cimg:
         cimg.load()
+    print("cimg:", cimg.size)
     # File path to encrypted image output
     encrypt_output_image_fp = os.path.join("static", f"encrypt_output.{cimg.format}")
+    print("output fp:", encrypt_output_image_fp)
     # Check if user image is larger than cover image, resize if it is
     if value == "Image":
         # Open user image
         with Image.open(user_image_fp) as uimg:
             uimg.load()
+        print("uimg:", uimg.size)
         # Check sizes
         if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
             cimg = cimg.resize(uimg.size)
@@ -115,6 +147,11 @@ def decrypt_event():
         decrypt_image.save(decrypt_output_fp)
 
 
+# GUI Contents
+
+# Create Filepaths object to keep track of file paths
+file_paths = Filepaths()
+
 # Title of the project
 ui.label("The Thick Wrappers Steganography Project")
 
@@ -143,7 +180,8 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
             with ui.column():
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True))
         with ui.row():
-            ui.button("Encrypt", on_click=lambda e: encrypt_event(e, dropdown_text_or_image.value))
+            ui.button("Encrypt", on_click=lambda e:
+                      encrypt_event(e, dropdown_text_or_image.value, text_to_encrypt.value))
     # User input needed if image message type is chosen
     with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Image"):
         # Prompt the user for the image they want to encrypt into cover image
