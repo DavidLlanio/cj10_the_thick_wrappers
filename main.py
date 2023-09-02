@@ -2,9 +2,14 @@ import os
 import re
 
 from nicegui import events, ui
+from PIL import Image
 
 
-# GUI helper functions
+def placeholder_function():  # noqa: D103
+    pass
+
+
+# GUI callback functions
 def handle_image_upload(img: events.UploadEventArguments, cover=False):
     """Handle user image to encrypt.
 
@@ -33,7 +38,7 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
         f.write(content)
 
 
-def encrypt_event():
+def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = None):
     """Function that checks if conditions for encryption are met and calls encrypt fucntion
 
     This function will check whether text or image is being encrypted into the cover_iamge.
@@ -42,11 +47,39 @@ def encrypt_event():
     size as the cover_image. Then, the appropriate function will be called to encrypt
     either the text or image into the cover_image. The output image will be saved in static
     folder as output_image.(cover image file extension)
+
+    param e: GUI objects for click event.
+    param value: String with type of message will be encrypted. Will be "Text" or "Image".
     """
-    # TODO: Check whether it is text or image encryption
-    # TODO: Check if user_image is larger than cover image, resize if it is
-    # TODO: Call appropriate function to encrypt either text or image
-    # TODO: Save the image in static as output_image
+    # File paths for all images
+    user_image_fp = "static/user_image.*"
+    cover_image_fp = "static/cover_image.*"
+    output_image_fp = "static/output_image.*"
+    # Open the cover image
+    with Image.open(cover_image_fp) as cimg:
+        cimg.load()
+    # Check if user image is larger than cover image, resize if it is
+    if value == "Image":
+        # Open user image
+        with Image.open(user_image_fp) as uimg:
+            uimg.load()
+        # Check sizes
+        if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
+            cimg = cimg.resize(uimg.size)
+        # Call function to encrypt user image into cover image
+        output_image = placeholder_function(uimg, cimg)
+        # Save the output image
+        output_image.save(output_image_fp)
+    else:
+        # Check if there is text Input
+        if text_input:
+            # Call function to encrypt text into cover image
+            output_image = placeholder_function(cimg, text_input)
+            # Save the output image
+            output_image.save(output_image_fp)
+        else:
+            ui.notify("Please input a text message to encrypt!")
+            return
 
 
 def decrypt_event():
@@ -90,7 +123,7 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
             with ui.column():
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True))
         with ui.row():
-            ui.button("Encrypt", on_click=lambda: ui.notify("Encrypted!"))
+            ui.button("Encrypt", on_click=lambda e: encrypt_event(e, dropdown_text_or_image.value))
     # User input needed if image message type is chosen
     with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Image"):
         # Prompt the user for the image they want to encrypt into cover image
@@ -106,7 +139,7 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
             with ui.column():
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True))
         with ui.row():
-            ui.button("Encrypt", on_click=lambda: ui.notify("Encrypted!"))
+            ui.button("Encrypt", on_click=lambda e: encrypt_event(e, dropdown_text_or_image.value))
 
 # Card with user input needed for decrypt with decrypt button
 with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Decrypt"):
