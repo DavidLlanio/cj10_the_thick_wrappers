@@ -33,6 +33,35 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
         f.write(content)
 
 
+def encrypt_event():
+    """Function that checks if conditions for encryption are met and calls encrypt fucntion
+
+    This function will check whether text or image is being encrypted into the cover_iamge.
+    If it is an image it will first check if the user_image is smaller or equal
+    in size to cover_image. If user_image is too large it will resize it to be the same
+    size as the cover_image. Then, the appropriate function will be called to encrypt
+    either the text or image into the cover_image. The output image will be saved in static
+    folder as output_image.(cover image file extension)
+    """
+    # TODO: Check whether it is text or image encryption
+    # TODO: Check if user_image is larger than cover image, resize if it is
+    # TODO: Call appropriate function to encrypt either text or image
+    # TODO: Save the image in static as output_image
+
+
+def decrypt_event():
+    """Function that does procedures for decryption
+
+    Loads up the cover_image gotten from the user
+    and calls the decrypt functions. This will output
+    the decrypt function outputs into files for display
+    in GUI.
+    """
+    # TODO: Call the function to decrypt text from image
+    # TODO: Call the function to decrypt an image from image
+    # TODO: Output resulst to output.txt and output.(file extension of cover image)
+
+
 # Title of the project
 ui.label("The Thick Wrappers Steganography Project")
 
