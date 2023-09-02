@@ -1,6 +1,8 @@
 from PIL import Image
 
 ASCII_MAX = 127
+# Added as message end
+PADDING = list(map(ord, ",,,.."))
 
 
 # Convert string to bytes, removing non-ASCII characters
@@ -16,10 +18,8 @@ def strip_non_ascii(text: str) -> list[int]:
 def encrypt_text(text: str, image_path: str) -> Image.Image:
     """Encode a text string in randomly selected coordinates of an image"""
     with Image.open(image_path) as image:
-        # Convert to ascii
-        bytes = strip_non_ascii(text)
-        if not bytes:
-            raise ValueError(f"'{text}' contains no characters that can be encoded")
+        # Convert to ASCII and add padding indicating message end
+        bytes = strip_non_ascii(text) + PADDING
         n = len(bytes)
         rows, cols = image.size
 
@@ -31,7 +31,7 @@ def encrypt_text(text: str, image_path: str) -> Image.Image:
 
         # Alter 3 LSBs for each target pixel
         bit_length = 3
-        modulus = 8
+        modulus = 2 ** bit_length
 
         for target, byte in zip(targets, bytes):
             pixel: list[int] = image.getpixel(target)
