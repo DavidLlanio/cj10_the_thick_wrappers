@@ -10,7 +10,7 @@ def strip_non_ascii(text: str) -> list[int]:
     """Convert string to bytes, removing non-ASCII characters"""
     result = []
     for char in text:
-        if (byte := ord(char) <= ASCII_MAX):
+        if ((byte := ord(char)) <= ASCII_MAX):
             result.append(byte)
     return result
 
@@ -19,7 +19,7 @@ def encrypt_text(text: str, image_path: str) -> Image.Image:
     """Encode a text string in randomly selected coordinates of an image"""
     with Image.open(image_path) as image:
         # Convert to ASCII and add padding indicating message end
-        bytes = strip_non_ascii(text) + PADDING
+        bytes = strip_non_ascii(text)
         n = len(bytes)
         rows, cols = image.size
 
@@ -46,5 +46,4 @@ def encrypt_text(text: str, image_path: str) -> Image.Image:
             image.putpixel(target, tuple(pixel))
 
         # Save original values?
-        image.show()
         return image
