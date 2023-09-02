@@ -1,3 +1,4 @@
+import io
 import os
 import re
 
@@ -23,6 +24,10 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
     """
     # Get the binary of the tempfile object
     content = img.content.read()
+    # Create a pillow image object using the binary
+    with Image.open(io.BytesIO(content)) as image:
+        image.load()
+        rgb_image = image.convert("RGB")
     # Get the extension using regex and check that it is valid
     acceptable_extensions = ["jpg", "png", "jpeg"]
     file_extension = re.search(r"\.([a-zA-Z0-9]+)$", img.name).group(1)
@@ -34,8 +39,7 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
         file_path = os.path.join("static", f"cover_image.{file_extension}")
     else:
         file_path = os.path.join("static", f"user_image.{file_extension}")
-    with open(file_path, "wb") as f:
-        f.write(content)
+    rgb_image.save(file_path)
 
 
 def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = None):
@@ -50,14 +54,16 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
 
     param e: GUI objects for click event.
     param value: String with type of message will be encrypted. Will be "Text" or "Image".
+    param text_input: Message to be encrypted into image
     """
     # File paths for all images
     user_image_fp = "static/user_image.*"
     cover_image_fp = "static/cover_image.*"
-    output_image_fp = "static/output_image.*"
     # Open the cover image
     with Image.open(cover_image_fp) as cimg:
         cimg.load()
+    # File path to encrypted image output
+    encrypt_output_image_fp = os.path.join("static", f"encrypt_output.{cimg.format}")
     # Check if user image is larger than cover image, resize if it is
     if value == "Image":
         # Open user image
@@ -69,14 +75,14 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         # Call function to encrypt user image into cover image
         output_image = placeholder_function(uimg, cimg)
         # Save the output image
-        output_image.save(output_image_fp)
+        output_image.save(encrypt_output_image_fp)
     else:
         # Check if there is text Input
         if text_input:
             # Call function to encrypt text into cover image
             output_image = placeholder_function(cimg, text_input)
             # Save the output image
-            output_image.save(output_image_fp)
+            output_image.save(encrypt_output_image_fp)
         else:
             ui.notify("Please input a text message to encrypt!")
             return
@@ -90,9 +96,23 @@ def decrypt_event():
     the decrypt function outputs into files for display
     in GUI.
     """
-    # TODO: Call the function to decrypt text from image
-    # TODO: Call the function to decrypt an image from image
-    # TODO: Output resulst to output.txt and output.(file extension of cover image)
+    # File path of cover image
+    cover_image_fp = "static/cover_image.*"
+    decrypt_output_fp = "static/decrypt_output.*"
+    # Open the cover image
+    with Image.open(cover_image_fp) as cimg:
+        cimg.load()
+    # Call the function to decrypt text from image
+    decrypt_text, end_code_found = placeholder_function(cimg)
+    # Save output as text file
+    if end_code_found:
+        with open(decrypt_output_fp) as f:
+            f.write(decrypt_text)
+    else:
+        # Call the function to decrypt an image from an image
+        decrypt_image = placeholder_function(cimg)
+        # Save output as an image
+        decrypt_image.save(decrypt_output_fp)
 
 
 # Title of the project
