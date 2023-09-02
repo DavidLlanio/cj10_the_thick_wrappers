@@ -1,47 +1,50 @@
-from secrets import randbelow
-
 from PIL import Image
 
-
-def select_pixels(x: int, y: int, number: int) -> set[tuple[int, int]]:
-    """Randomly select a given number of (x, y) coordinates for an image of given dimensions"""
-    extent = x * y
-    if number > extent:
-        raise ValueError(f"Cannot encode {number} characters in image of {extent} pixels")
-    chosen = set()
-
-    # Randomly sample from range of valid 1D indices, then convert to 2D
-    while len(chosen) < number:
-        new = randbelow(extent)
-        coord = (new // y, new % y)
-        if coord not in chosen:
-            chosen.add(coord)
-    return chosen
+ASCII_MAX = 127
 
 
-def encrypt(text: str, image_path: str) -> tuple[Image.Image, dict[tuple[int, int], int]]:
+# Convert string to bytes, removing non-ASCII characters
+def strip_non_ascii(text: str) -> list[int]:
+    """Convert string to bytes, removing non-ASCII characters"""
+    result = []
+    for char in text:
+        if (byte := ord(char) <= ASCII_MAX):
+            result.append(byte)
+    return result
+
+
+def encrypt_text(text: str, image_path: str) -> Image.Image:
     """Encode a text string in randomly selected coordinates of an image"""
     with Image.open(image_path) as image:
-        bytes = map(ord, text)
-        n = len(text)
-        targets = select_pixels(*image.size, n)
-        modulus = 8
+        # Convert to ascii
+        bytes = strip_non_ascii(text)
+        if not bytes:
+            raise ValueError(f"'{text}' contains no characters that can be encoded")
+        n = len(bytes)
+        rows, cols = image.size
+
+        extent = rows * cols
+        if n > extent:
+            raise ValueError(f"Cannot encode {n} characters in image of {extent} pixels")
+        # Pixel coordinates, going left and down
+        targets = [(c // cols, c % cols) for c in range(n)]
 
         # Alter 3 LSBs for each target pixel
-        originals = []
+        bit_length = 3
+        modulus = 8
+
         for target, byte in zip(targets, bytes):
-            print(target)
             pixel: list[int] = image.getpixel(target)
-            originals.append(pixel)
             pixel = list(pixel)
 
             for i, plane in enumerate(pixel):
-                plane >>= 3
-                plane <<= 3
+                # Clear 3 LSB
+                plane >>= bit_length
+                plane <<= bit_length
                 pixel[i] = plane + byte % modulus
-                byte >>= 3
+                byte >>= bit_length
             image.putpixel(target, tuple(pixel))
 
         # Save original values?
         image.show()
-        return image, dict(zip(targets, originals))
+        return image
