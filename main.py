@@ -106,7 +106,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         output_image = placeholder_function(uimg, cimg)
         # Save the output image
         output_image.save(encrypt_output_image_fp)
-    else:
+    elif value == "Text":
         # Check if there is text Input
         if text_input:
             # Call function to encrypt text into cover image
