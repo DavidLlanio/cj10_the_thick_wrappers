@@ -34,8 +34,8 @@ class Filepaths:
             return os.path.join("static", f"decrypted_output.{self.cover_image_fe}")
 
 
-def placeholder_function():  # noqa: D103
-    pass
+def placeholder_function(*args, **kwargs):  # noqa: D103
+    return [None, None]
 
 
 # GUI callback functions
@@ -64,10 +64,12 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
         return
     # Save the image locally if the file extension is valid
     if cover:
-        file_path = os.path.join("static", f"cover_image.{file_extension}")
+        file_paths.cover_image_fe = file_extension
+        fp = file_paths.get_cover_image_fp()
     else:
-        file_path = os.path.join("static", f"user_image.{file_extension}")
-    rgb_image.save(file_path)
+        file_paths.user_image_fe = file_extension
+        fp = file_paths.get_user_image_fp()
+    rgb_image.save(fp)
 
 
 def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = None):
@@ -86,24 +88,20 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
     """
     print("Text input:", text_input)
     # File paths for all images
-    user_image_fp = "static/user_image.jpg"
-    cover_image_fp = "static/cover_image.jpg"
+    user_image_fp = file_paths.get_user_image_fp()
+    cover_image_fp = file_paths.get_cover_image_fp()
+    encrypt_output_image_fp = file_paths.get_encrypted_image_output_path()
     # Open the cover image
     with Image.open(cover_image_fp) as cimg:
         cimg.load()
-    print("cimg:", cimg.size)
-    # File path to encrypted image output
-    encrypt_output_image_fp = os.path.join("static", f"encrypt_output.{cimg.format}")
-    print("output fp:", encrypt_output_image_fp)
     # Check if user image is larger than cover image, resize if it is
     if value == "Image":
         # Open user image
         with Image.open(user_image_fp) as uimg:
             uimg.load()
-        print("uimg:", uimg.size)
         # Check sizes
         if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
-            cimg = cimg.resize(uimg.size)
+            uimg = uimg.resize(cimg.size)
         # Call function to encrypt user image into cover image
         output_image = placeholder_function(uimg, cimg)
         # Save the output image
@@ -115,6 +113,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
             output_image = placeholder_function(cimg, text_input)
             # Save the output image
             output_image.save(encrypt_output_image_fp)
+            pass
         else:
             ui.notify("Please input a text message to encrypt!")
             return
@@ -129,8 +128,9 @@ def decrypt_event():
     in GUI.
     """
     # File path of cover image
-    cover_image_fp = "static/cover_image.*"
-    decrypt_output_fp = "static/decrypt_output.*"
+    cover_image_fp = file_paths.get_cover_image_fp()
+    text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
+    image_output_fp = file_paths.get_decrypted_output_file_path()
     # Open the cover image
     with Image.open(cover_image_fp) as cimg:
         cimg.load()
@@ -138,13 +138,20 @@ def decrypt_event():
     decrypt_text, end_code_found = placeholder_function(cimg)
     # Save output as text file
     if end_code_found:
-        with open(decrypt_output_fp) as f:
+        # Remove output file if it exists
+        if os.path.exists(image_output_fp):
+            os.remove(image_output_fp)
+        # Create new output file
+        with open(text_output_fp) as f:
             f.write(decrypt_text)
     else:
+        # Remove output file if it exists
+        if os.path.exists(text_output_fp):
+            os.remove(text_output_fp)
         # Call the function to decrypt an image from an image
         decrypt_image = placeholder_function(cimg)
         # Save output as an image
-        decrypt_image.save(decrypt_output_fp)
+        decrypt_image.save(image_output_fp)
 
 
 # GUI Contents
