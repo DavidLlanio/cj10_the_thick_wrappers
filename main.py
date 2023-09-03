@@ -24,14 +24,14 @@ class Filepaths:
 
     def get_encrypted_image_output_path(self):
         """Get file path for encrypted output image"""
-        return os.path.join("static", f"encrypt_output.{self.cover_image_fe}")
+        return os.path.join("static", f"output.{self.cover_image_fe}")
 
     def get_decrypted_output_file_path(self, text=False):
         """Get file path for decrypted output, either an image or text file"""
         if text:
-            return os.path.join("static", "decrypted_output.txt")
+            return os.path.join("static", "output.txt")
         else:
-            return os.path.join("static", f"decrypted_output.{self.cover_image_fe}")
+            return os.path.join("static", f"output.{self.cover_image_fe}")
 
 
 def placeholder_function(*args, **kwargs):  # noqa: D103
@@ -39,6 +39,34 @@ def placeholder_function(*args, **kwargs):  # noqa: D103
 
 
 # GUI callback functions
+def show_output():
+    """Creates dialog with output"""
+    print("Function reached")
+    text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
+    image_output_fp = file_paths.get_decrypted_output_file_path()
+    # If there is output use that as the content of the markdown
+    if os.path.exists(image_output_fp):
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Output")
+            ui.markdown(f"![output]({image_output_fp})")
+            with ui.row():
+                ui.button("Download", on_click=lambda: ui.download(image_output_fp))
+                ui.button("Close", on_click=dialog.close)
+        dialog.open()
+    elif os.path.exists(text_output_fp):
+        with open(text_output_fp, "r") as o:
+            text = o.read()
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Output")
+            ui.markdown(f"{text}")
+            with ui.row():
+                ui.button("Download", on_click=ui.download(text_output_fp))
+                ui.button("Close", on_click=dialog.close)
+        dialog.open()
+    else:
+        print("Something went wrong")
+
+
 def handle_image_upload(img: events.UploadEventArguments, cover=False):
     """Handle user image to encrypt.
 
@@ -90,6 +118,8 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
     user_image_fp = file_paths.get_user_image_fp()
     cover_image_fp = file_paths.get_cover_image_fp()
     encrypt_output_image_fp = file_paths.get_encrypted_image_output_path()
+    text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
+    image_output_fp = file_paths.get_decrypted_output_file_path()
     # Open the cover image
     with Image.open(cover_image_fp) as cimg:
         cimg.load()
@@ -103,6 +133,11 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
             uimg = uimg.resize(cimg.size)
         # Call function to encrypt user image into cover image
         output_image = placeholder_function(uimg, cimg)
+        # Remove output file if it exists
+        if os.path.exists(image_output_fp):
+            os.remove(image_output_fp)
+        elif os.path.exists(text_output_fp):
+            os.remove(text_output_fp)
         # Save the output image
         output_image.save(encrypt_output_image_fp)
     elif value == "Text":
@@ -114,11 +149,17 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
             if output_image is None:
                 ui.notify("Text message is too long for image!")
                 return
+            # Remove output file if it exists
+            if os.path.exists(image_output_fp):
+                os.remove(image_output_fp)
+            elif os.path.exists(text_output_fp):
+                os.remove(text_output_fp)
             # Save the output image
             output_image.save(encrypt_output_image_fp)
         else:
             ui.notify("Please input a text message to encrypt!")
             return
+    show_output()
 
 
 def decrypt_event():
@@ -154,6 +195,7 @@ def decrypt_event():
         decrypt_image = placeholder_function(cimg)
         # Save output as an image
         decrypt_image.save(image_output_fp)
+    show_output()
 
 
 # GUI Contents
@@ -223,18 +265,6 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True))
         with ui.row():
             ui.button("Decrypt", on_click=lambda: ui.notify("Decrypted!"))
-
-# Output area
-with ui.markdown() as default_output:
-    default_output.content = "![PyDis Logo](static/pydis_logo.png)"
-
-# with ui.markdown().bind_visibility_from(encrypt_image_button):
-#     pass
-
-# Buttons to download or clear output
-with ui.row():
-    download_button = ui.button("Download", on_click=lambda: ui.notify("Downloaded!"))
-    clear_button = ui.button("Clear")
 
 # Initialize and run the GUI
 ui.run()
