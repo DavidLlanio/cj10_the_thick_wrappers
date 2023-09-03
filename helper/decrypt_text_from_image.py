@@ -1,6 +1,7 @@
 image = ""  # TODO add image input here
 
 
+
 def all_pixels_to_binary(image):
     """Translates an inputted image's pixels to binary"""
     pixels = image.load()
@@ -11,6 +12,9 @@ def all_pixels_to_binary(image):
         r, g, b = pixels[x, y]
         r, g, b = int(str(bin(r))[2:]), int(str(bin(g))[2:]), int(str(bin(b))[2:])
         return r, g, b
+
+
+
 
     # Iterates through all of the picture's pixels, left to right then down
     def pixel_list():
@@ -41,4 +45,6 @@ def bin_to_ascii(binary):
     binary_array = ascii.to_bytes(byte_number, "big")
     ascii_text = binary_array.decode()
     return ascii_text
+
 print(bin_to_ascii("011000010110001001100011")) # "abc"
+
