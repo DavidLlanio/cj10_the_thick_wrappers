@@ -3,7 +3,7 @@ import os
 import re
 from dataclasses import dataclass
 
-from nicegui import events, ui
+from nicegui import app, events, ui
 from PIL import Image
 
 
@@ -86,7 +86,6 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
     param value: String with type of message will be encrypted. Will be "Text" or "Image".
     param text_input: Message to be encrypted into image
     """
-    print("Text input:", text_input)
     # File paths for all images
     user_image_fp = file_paths.get_user_image_fp()
     cover_image_fp = file_paths.get_cover_image_fp()
@@ -111,9 +110,12 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         if text_input:
             # Call function to encrypt text into cover image
             output_image = placeholder_function(cimg, text_input)
+            # Check return value in case text is too long
+            if output_image is None:
+                ui.notify("Text message is too long for image!")
+                return
             # Save the output image
             output_image.save(encrypt_output_image_fp)
-            pass
         else:
             ui.notify("Please input a text message to encrypt!")
             return
@@ -135,7 +137,7 @@ def decrypt_event():
     with Image.open(cover_image_fp) as cimg:
         cimg.load()
     # Call the function to decrypt text from image
-    decrypt_text, end_code_found = placeholder_function(cimg)
+    decrypt_text, end_code_found = placeholder_function(cimg)  # Text decryption function
     # Save output as text file
     if end_code_found:
         # Remove output file if it exists
@@ -158,6 +160,9 @@ def decrypt_event():
 
 # Create Filepaths object to keep track of file paths
 file_paths = Filepaths()
+
+# Add static files folder
+app.add_static_files("/static", "static")
 
 # Title of the project
 ui.label("The Thick Wrappers Steganography Project")
@@ -187,8 +192,8 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
             with ui.column():
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True))
         with ui.row():
-            ui.button("Encrypt", on_click=lambda e:
-                      encrypt_event(e, dropdown_text_or_image.value, text_to_encrypt.value))
+            encrypt_text_button = ui.button("Encrypt", on_click=lambda e:
+                                            encrypt_event(e, dropdown_text_or_image.value, text_to_encrypt.value))
     # User input needed if image message type is chosen
     with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Image"):
         # Prompt the user for the image they want to encrypt into cover image
@@ -204,7 +209,8 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
             with ui.column():
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True))
         with ui.row():
-            ui.button("Encrypt", on_click=lambda e: encrypt_event(e, dropdown_text_or_image.value))
+            encrypt_image_button = ui.button("Encrypt", on_click=lambda e:
+                                             encrypt_event(e, dropdown_text_or_image.value))
 
 # Card with user input needed for decrypt with decrypt button
 with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Decrypt"):
@@ -219,7 +225,11 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
             ui.button("Decrypt", on_click=lambda: ui.notify("Decrypted!"))
 
 # Output area
-output = ui.image("https://picsum.photos/id/377/640/360")
+with ui.markdown() as default_output:
+    default_output.content = "![PyDis Logo](static/pydis_logo.png)"
+
+# with ui.markdown().bind_visibility_from(encrypt_image_button):
+#     pass
 
 # Buttons to download or clear output
 with ui.row():
