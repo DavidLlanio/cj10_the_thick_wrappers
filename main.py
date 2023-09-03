@@ -123,9 +123,9 @@ def decrypt_event():
     """Function that does procedures for decryption
 
     Loads up the cover_image gotten from the user
-    and calls the decrypt functions. This will output
-    the decrypt function outputs into files for display
-    in GUI.
+    and calls the decrypt functions. If the text funciton detects text
+    a text file with the decrypted message will be saved as a text file.
+    Otherwise, the decrypted image will be saved.
     """
     # File path of cover image
     cover_image_fp = file_paths.get_cover_image_fp()
