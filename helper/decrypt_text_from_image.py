@@ -1,13 +1,8 @@
 from PIL import Image
 
-image = ""  # TODO add image input here
-
-
-def all_pixels_to_binary(image):
+def all_pixels_to_binary(img):
     """Translates an inputted image's pixels to binary"""
-    img = Image.open(image)
     pixels = img.load()
-    print(pixels)
     width, height = img.size
     pixellist = []
 
@@ -15,12 +10,12 @@ def all_pixels_to_binary(image):
         if img.mode == 'RGBA':
             r, g, b, a = pixels[x, y]
             r, g, b = int(str(bin(r))[2:]), int(str(bin(g))[2:]), int(str(bin(b))[2:])
-            return r, g, b
+            return str(r), str(g), str(b)
 
         else:
             r, g, b = pixels[x, y]
             r, g, b = int(str(bin(r))[2:]), int(str(bin(g))[2:]), int(str(bin(b))[2:])
-            return r, g, b
+            return str(r), str(g), str(b)
 
     # Iterates through all of the picture's pixels, left to right then down
     def pixel_list():
@@ -33,15 +28,23 @@ def all_pixels_to_binary(image):
     return pixellist
 
 
-def binary_decoder(image):
+def binary_decoder(img):
     """Iterates and checks every binary RGB triplet, scanning over the last 3 LSB"""
-    RGB_binary_list = all_pixels_to_binary(image)
+    img = Image.open(img)
+    pixel_list = []
+    RGB_binary_list = all_pixels_to_binary(img)
+    word_total = ""
     for pixel in RGB_binary_list:
-        output = ""
-        for y in pixel:
-            y = str(y)
-            output += y[-3:]
-        print(bin_to_ascii(output))
+        # print(pixel)
+        output = "0"
+        a, b, c = pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
+        output  = output +  (str(a) + str(b) + str(c))
+        pixel_list.append(output)
+    pixel_list.append("0010110000101100001011000010111000101110") # forces a delimter incase one wasn't encrypted in
+    while word_total[-5:] != ",,,..":
+        for binary in pixel_list:
+            word_total += bin_to_ascii(binary)
+    return word_total
 
 
 def bin_to_ascii(binary):
@@ -51,4 +54,6 @@ def bin_to_ascii(binary):
     binary_array = ascii.to_bytes(byte_number, "big")
     ascii_text = binary_array.decode()
     return ascii_text
-# example: print(bin_to_ascii(11000010110001001100011)) # "abc"
+
+print(binary_decoder("/Users/maxencegilloteaux/Desktop/great_wave_unscrambled.jpg"))
+# print(binary_decoder("/Users/maxencegilloteaux/Desktop/nebula.webp"))
