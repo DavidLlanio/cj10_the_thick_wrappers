@@ -22,6 +22,12 @@ class Pixel:
     def get_blue_bin(self):
         return bin(self.__blue).replace("0b", "").zfill(8)
 
+    def get_rgb(self):
+        return self.get_red(), self.get_green(), self.get_blue()
+
+    def get_rgb_bin(self):
+        return self.get_red_bin(), self.get_green_bin(), self.get_blue_bin()
+
     def set_red(self, value):
         match value:
             case int():
