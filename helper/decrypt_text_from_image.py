@@ -1,5 +1,6 @@
 from PIL import Image
 
+
 def all_pixels_to_binary(img):
     """Translates an inputted image's pixels to binary"""
     pixels = img.load()
@@ -38,9 +39,9 @@ def binary_decoder(img):
         # print(pixel)
         output = "0"
         a, b, c = pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
-        output  = output +  (str(a) + str(b) + str(c))
+        output = output + (str(a) + str(b) + str(c))
         pixel_list.append(output)
-    pixel_list.append("0010110000101100001011000010111000101110") # forces a delimter incase one wasn't encrypted in
+    pixel_list.append("0010110000101100001011000010111000101110")  # forces a delimter incase one wasn't encrypted in
     while word_total[-5:] != ",,,..":
         for binary in pixel_list:
             word_total += bin_to_ascii(binary)
@@ -54,6 +55,7 @@ def bin_to_ascii(binary):
     binary_array = ascii.to_bytes(byte_number, "big")
     ascii_text = binary_array.decode()
     return ascii_text
+
 
 print(binary_decoder("/Users/maxencegilloteaux/Desktop/great_wave_unscrambled.jpg"))
 # print(binary_decoder("/Users/maxencegilloteaux/Desktop/nebula.webp"))
