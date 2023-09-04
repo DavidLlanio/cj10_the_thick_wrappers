@@ -28,19 +28,19 @@ def encrypt_text(text: str, image: Image.Image) -> Image.Image | None:
     :param image Pillow `Image` object in which `text` will be encrypted. Must have only three color planes.
 
     This function encrypts a string in an image. Non-ASCII characters are
-    stripped from the string. For each character, a pixel of the image is selected,
+    stripped from the string, and a copy of the image is made. For each character, a pixel of the copy is selected,
     going left and down from the top left corner.
     For each pixel, the 7 bits of the corresponding ASCII code are encoded in
     the three least significant bits
     of each color plane (red, green, blue).
-    Blue receives only one bit. The modified image with the encoded message is
+    Blue receives only one bit. The modified copy with the encoded message is
     returned.
 
     If the input text contains more characters than the image has pixels,
     encryption is impossible, so `None` is returned.
     """
     # Convert to ASCII and add padding indicating message end
-    bytes = strip_non_ascii(text) + END_BYTES
+    bytes = strip_non_ascii(text.strip()) + END_BYTES
     n = len(bytes)
     rows, cols = image.size
 
@@ -54,10 +54,10 @@ def encrypt_text(text: str, image: Image.Image) -> Image.Image | None:
     # Alter 3 LSBs for each target pixel
     bit_length = 3
     modulus = 2 ** bit_length
+    output = image.copy()
 
     for target, byte in zip(targets, bytes):
-        pixel: list[int] = image.getpixel(target)
-        pixel = list(pixel)
+        pixel: list[int] = list(output.getpixel(target))
 
         for i, plane in enumerate(pixel):
             # Clear 3 LSB
@@ -65,6 +65,6 @@ def encrypt_text(text: str, image: Image.Image) -> Image.Image | None:
             plane <<= bit_length
             pixel[i] = plane + byte % modulus
             byte >>= bit_length
-        image.putpixel(target, tuple(pixel))
+        output.putpixel(target, tuple(pixel))
 
-    return image
+    return output

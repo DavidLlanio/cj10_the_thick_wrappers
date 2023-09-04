@@ -29,8 +29,8 @@ def test_message(message: str, image: Image.Image) -> None:
     text.
     """
     end_length = len(encrypt_text.END_TEXT)
-    result = encrypt_text.encrypt_text(message, image.copy())
-    assert result
+    result = encrypt_text.encrypt_text(message, image)
+    assert result and result != image
 
     cols = result.size[1]
     decrypt = []
@@ -46,7 +46,7 @@ def test_message(message: str, image: Image.Image) -> None:
         decrypt.append(chr(value))
     # Combine characters and remove end-of-message padding
     decrypt = "".join(decrypt)[: len(decrypt) - end_length]
-    assert decrypt == message
+    assert decrypt == message.strip()
 
 
 # Test different message sizes
