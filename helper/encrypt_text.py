@@ -42,13 +42,14 @@ def encrypt_text(text: str, image: Image.Image) -> Image.Image | None:
     # Convert to ASCII and add padding indicating message end
     bytes = strip_non_ascii(text.strip()) + END_BYTES
     n = len(bytes)
-    rows, cols = image.size
+    cols, rows = image.size
 
-    extent = rows * cols
+    extent = cols * rows
     # Alert caller if too many bytes to encode
     if n > extent:
         return None
     # Pixel coordinates, going left and down
+    breakpoint()
     targets = [(c % cols, c // cols) for c in range(n)]
 
     # Alter 3 LSBs for each target pixel
