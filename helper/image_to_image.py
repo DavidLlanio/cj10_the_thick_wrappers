@@ -1,8 +1,8 @@
-import copy
-
+import numpy as np
 from PIL import Image
 
-from helper.StegaImage import StegaImage
+from StegaImage import StegaImage
+from helper.Pixel import Pixel
 
 
 def load_image(directory: str):
@@ -10,18 +10,27 @@ def load_image(directory: str):
     return StegaImage(img)
 
 
-def steganograpize(cover: StegaImage, secret: StegaImage) -> StegaImage:
+def steganographize(cover: StegaImage, secret: StegaImage, output: str) -> None:
+    height, width, mode = cover.image_as_array.shape
+    cover_msb = cover.get_image_msb()
     secret_msb = secret.get_image_msb()
-    stega_image = copy.deepcopy(cover)
-    height, width, mode = stega_image
-    for x in range(width):
-        for y in range(height):
-            stega_image.set_pixel_lsb((x, y), secret_msb[y, x])
-    return stega_image
+    stega_image = np.empty((height, width), dtype=object)
+    for y in range(height):
+        for x in range(width):
+            stega_image[y, x] = merge_sb(cover_msb[y, x], secret_msb[y, x])
+    stega = Image.fromarray(stega_image, mode='RGBA')
+    stega.save(output)
+
+
+def merge_sb(msb: tuple[str, str, str], lsb: [str, str, str]):
+    sb = msb[0] + lsb[0], msb[1] + lsb[1], msb[2] + lsb[2]
+    return np.array(Pixel.tuple_input(sb).get_rgb(), dtype='uint8')
 
 
 if __name__ == "__main__":
     with Image.open("../.test_folder/discord_logo.png") as image:
         cover_image = StegaImage(image)
         secret_image = load_image("../.test_folder/secret_test.png")
-        stega_image = steganograpize(cover_image, secret_image)
+        print("Steganographizing...")
+        steganographize(cover_image, secret_image, "../.test_folder/output.png")
+        print("Complete!")
