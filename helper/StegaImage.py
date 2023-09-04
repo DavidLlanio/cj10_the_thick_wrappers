@@ -8,12 +8,13 @@ from helper.Pixel import Pixel
 class StegaImage:
     def __init__(self, image):
         self.image = image
+        self.image_as_array = np.asarray(image)
         self.format = image.format
         self.size = image.size
         self.mode = image.mode
 
     def get_pixel_binary(self, coordinates) -> tuple[str, str, str]:
-        decimal_value = self.image.getpixel(coordinates)
+        decimal_value = self.image_as_array[coordinates]
         px_bin = Pixel(decimal_value[0], decimal_value[1], decimal_value[2])
         return px_bin.get_rgb_bin()
 
@@ -34,27 +35,27 @@ class StegaImage:
         return msb_value[0], msb_value[1], msb_value[2]
 
     def get_image_bits(self):
-        grid = np.empty(shape=self.image.size, dtype='O')
-        width, height = self.image.size
+        height, width, mode = self.image_as_array.shape
+        grid = np.empty(shape=(width, height), dtype='O')
         for x in range(width):
             for y in range(height):
-                grid[x, y] = self.get_pixel_binary((x, y))
+                grid[x, y] = self.get_pixel_binary((y, x))
         return grid
 
     def get_image_lsb(self):
-        grid = np.empty(shape=self.image.size, dtype='O')
-        width, height = self.image.size
+        height, width, mode = self.image_as_array.shape
+        grid = np.empty(shape=(width, height), dtype='O')
         for x in range(width):
             for y in range(height):
-                grid[x, y] = self.get_pixel_lsb((x, y))
+                grid[x, y] = self.get_pixel_lsb((y, x))
         return grid
 
     def get_image_msb(self):
-        grid = np.empty(shape=self.image.size, dtype='O')
-        width, height = self.image.size
+        height, width, mode = self.image_as_array.shape
+        grid = np.empty(shape=(width, height), dtype='O')
         for x in range(width):
             for y in range(height):
-                grid[x, y] = self.get_pixel_msb((x, y))
+                grid[x, y] = self.get_pixel_msb((y, x))
         return grid
 
     def set_pixel_lsb(self, coordinates: tuple[int, int], lsb: tuple[str, str, str]):
@@ -63,7 +64,7 @@ class StegaImage:
         for index, value in enumerate(msb):
             new_bits[index] = merge_sb(value, lsb[index])
         new_pixel = Pixel(int(new_bits[0]), int(new_bits[1]), int(new_bits[2]))
-        self.image.putpixel(coordinates, new_pixel)
+        self.image.putpixel(coordinates, new_pixel.get_rgb())
 
 
 class SignificantBit(Enum):
