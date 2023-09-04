@@ -36,7 +36,6 @@ def binary_decoder(img):
     RGB_binary_list = all_pixels_to_binary(img)
     word_total = ""
     for pixel in RGB_binary_list:
-        # print(pixel)
         output = "0"
         a, b, c = pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
         output = output + (str(a) + str(b) + str(c))
@@ -55,7 +54,3 @@ def bin_to_ascii(binary):
     binary_array = ascii.to_bytes(byte_number, "big")
     ascii_text = binary_array.decode()
     return ascii_text
-
-
-print(binary_decoder("/Users/maxencegilloteaux/Desktop/great_wave_unscrambled.jpg"))
-# print(binary_decoder("/Users/maxencegilloteaux/Desktop/nebula.webp"))
