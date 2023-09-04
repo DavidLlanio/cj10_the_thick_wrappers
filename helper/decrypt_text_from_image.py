@@ -1,26 +1,20 @@
-from PIL import Image
-
 image = ""  # TODO add image input here
+
 
 
 def all_pixels_to_binary(image):
     """Translates an inputted image's pixels to binary"""
-    img = Image.open(image)
-    pixels = img.load()
-    print(pixels)
-    width, height = img.size
+    pixels = image.load()
+    width, height = image.size
     pixellist = []
 
     def pixel_to_bin(x, y):
-        if img.mode == 'RGBA':
-            r, g, b, a = pixels[x, y]
-            r, g, b = int(str(bin(r))[2:]), int(str(bin(g))[2:]), int(str(bin(b))[2:])
-            return r, g, b
+        r, g, b = pixels[x, y]
+        r, g, b = int(str(bin(r))[2:]), int(str(bin(g))[2:]), int(str(bin(b))[2:])
+        return r, g, b
 
-        else:
-            r, g, b = pixels[x, y]
-            r, g, b = int(str(bin(r))[2:]), int(str(bin(g))[2:]), int(str(bin(b))[2:])
-            return r, g, b
+
+
 
     # Iterates through all of the picture's pixels, left to right then down
     def pixel_list():
@@ -47,8 +41,10 @@ def binary_decoder(image):
 def bin_to_ascii(binary):
     """Traslates inputted binary to ASCII"""
     ascii = int(f"{(binary)}", 2)
-    byte_number = ascii.bit_length() + 7 // 8
+    byte_number = (ascii.bit_length() + 7) // 8
     binary_array = ascii.to_bytes(byte_number, "big")
     ascii_text = binary_array.decode()
     return ascii_text
-# example: print(bin_to_ascii(11000010110001001100011)) # "abc"
+
+print(bin_to_ascii("011000010110001001100011")) # "abc"
+
