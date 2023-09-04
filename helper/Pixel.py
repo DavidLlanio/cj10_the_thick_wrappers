@@ -5,6 +5,17 @@ class Pixel:
         self.__green = green
         self.__blue = blue
 
+    @classmethod
+    def tuple_input(cls, tuple_rgb: tuple[int | str, int | str, int | str]):
+        rgb = [0, 0, 0]
+        for index, value in enumerate(tuple_rgb):
+            match value:
+                case int():
+                    rgb[index] = value
+                case str():
+                    rgb[index] = int(value, 2)
+        return cls(red=rgb[0], green=rgb[1], blue=rgb[2])
+
     def get_red(self) -> int:
         return self.__red
 
