@@ -12,6 +12,7 @@ def all_pixels_to_binary(img):
         r, g, b = str(bin(r))[2:], str(bin(g))[2:], str(bin(b))[2:]
         return r, g, b
 
+
     # Iterates through all of the picture's pixels, left to right then down
     def pixel_list():
         for y in range(height):
@@ -44,7 +45,7 @@ def binary_decoder(img):
 def bin_to_ascii(binary):
     """Traslates inputted binary to ASCII"""
     ascii = int(f"{(binary)}", 2)
-    byte_number = ascii.bit_length() + 7 // 8
+    byte_number = (ascii.bit_length() + 7) // 8
     binary_array = ascii.to_bytes(byte_number, "big")
     ascii_text = binary_array.decode()
     return ascii_text
