@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from nicegui import app, events, ui
 from PIL import Image
 
+from helper.encrypt_text import encrypt_text
+
 
 @dataclass
 class Filepaths:
@@ -41,7 +43,6 @@ def placeholder_function(*args, **kwargs):  # noqa: D103
 # GUI callback functions
 def show_output():
     """Creates dialog with output"""
-    print("Function reached")
     text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
     image_output_fp = file_paths.get_decrypted_output_file_path()
     # If there is output use that as the content of the markdown
@@ -144,7 +145,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         # Check if there is text Input
         if text_input:
             # Call function to encrypt text into cover image
-            output_image = placeholder_function(cimg, text_input)
+            output_image = encrypt_text(text_input, cimg)
             # Check return value in case text is too long
             if output_image is None:
                 ui.notify("Text message is too long for image!")
