@@ -8,15 +8,9 @@ def all_pixels_to_binary(img):
     pixellist = []
 
     def pixel_to_bin(x, y):
-        if img.mode == 'RGBA':
-            r, g, b, a = pixels[x, y]
-            r, g, b = int(str(bin(r))[2:]), int(str(bin(g))[2:]), int(str(bin(b))[2:])
-            return str(r), str(g), str(b)
-
-        else:
-            r, g, b = pixels[x, y]
-            r, g, b = str(bin(r))[2:], str(bin(g))[2:], str(bin(b))[2:]
-            return r, g, b
+        r, g, b = pixels[x, y]
+        r, g, b = str(bin(r))[2:], str(bin(g))[2:], str(bin(b))[2:]
+        return r, g, b
 
     # Iterates through all of the picture's pixels, left to right then down
     def pixel_list():
