@@ -12,6 +12,7 @@ def all_pixels_to_binary(img):
         r, g, b = str(bin(r))[2:], str(bin(g))[2:], str(bin(b))[2:]
         return r, g, b
 
+
     # Iterates through all of the picture's pixels, left to right then down
     def pixel_list():
         for y in range(height):
@@ -19,7 +20,6 @@ def all_pixels_to_binary(img):
                 rgb_val = pixel_to_bin(x, y)
                 pixellist.append(rgb_val)
     pixel_list()
-
     return pixellist
 
 
@@ -32,8 +32,8 @@ def binary_decoder(img):
     for pixel in RGB_binary_list:
         print(pixel)
         output = "0"
-        a, b, c = pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
-        output = output + (str(a) + str(b) + str(c))
+        r, g, b= pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
+        output = output + (str(b) + str(g) + str(r))
         pixel_list.append(output)
     pixel_list.append("0010110000101100001011000010111000101110")  # forces a delimter incase one wasn't encrypted in
     while word_total[-5:] != ",,,..":
@@ -45,7 +45,7 @@ def binary_decoder(img):
 def bin_to_ascii(binary):
     """Traslates inputted binary to ASCII"""
     ascii = int(f"{(binary)}", 2)
-    byte_number = ascii.bit_length() + 7 // 8
+    byte_number = (ascii.bit_length() + 7) // 8
     binary_array = ascii.to_bytes(byte_number, "big")
     ascii_text = binary_array.decode()
     return ascii_text
