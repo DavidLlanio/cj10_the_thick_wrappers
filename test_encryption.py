@@ -1,5 +1,6 @@
 # Demonstrates encyption on a sample image
 import string
+from os import listdir
 from random import choices
 
 from PIL import Image
@@ -7,6 +8,38 @@ from PIL import Image
 from helper import encrypt_text
 
 chars = string.ascii_letters + string.digits + string.punctuation
+
+
+def decrypt_text(image):
+    """Decrypt text encoded in an image"""
+    cols = image.size[1]
+    end_length = len(encrypt_text.END_TEXT)
+    # For last 3 bits
+    modulus = 8
+    decrypt = []
+
+    for pixel in [
+        (
+            n % cols,
+            n // cols,
+        )
+        for n in range(image.size[0] * image.size[1])
+    ]:
+        value = 0
+        # Recover ASCII code
+        for i, plane in enumerate(image.getpixel(pixel)):
+            plane %= modulus
+            plane <<= 3 * i
+            value += plane
+        decrypt.append(chr(value))
+        endpoint = len(decrypt) - end_length
+        if (
+            len(decrypt) >= end_length
+            and "".join(decrypt[endpoint:]) == encrypt_text.END_TEXT
+        ):
+            return "".join(decrypt)[:endpoint]
+    else:
+        return None
 
 
 def random_message(length: int) -> str:
@@ -51,10 +84,17 @@ def test_message(message: str, image: Image.Image) -> None:
 
 # Test different message sizes
 # From https://www.rawpixel.com/image/7514064/photo-image-public-domain-galaxy-space
-image = Image.open("nebula.jpeg")
-for length in (0, 5, 100, 5000, 15000):
-    message = random_message(length)
-    test_message(message, image)
+image = Image.open("static/output.jpg")
+message = random_message(5000)
+assert decrypt_text(encrypt_text.encrypt_text(message, image)) == message
+
+for path in listdir("static"):
+    image = Image.open(f"static/{path}")
+    for length in (0, 5, 100, 5000, 15000):
+        message = random_message(length)
+        encryption = encrypt_text.encrypt_text(message, image)
+        decrypt = decrypt_text(encryption)
+        assert message == decrypt
 
 # Maximum length message
 test_message("a" * 9995, image.crop((0, 0, 100, 100)))
