@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any
+from PIL import Image
 
 import numpy as np
 from numpy import ndarray, dtype
@@ -8,7 +9,7 @@ from Pixel import Pixel
 
 
 class StegaImage:
-    def __init__(self, image):
+    def __init__(self, image: Image):
         self.image = image
         self.image_as_array = np.asarray(image)
         self.format = image.format
