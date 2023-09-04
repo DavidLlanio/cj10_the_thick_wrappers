@@ -49,7 +49,7 @@ def encrypt_text(text: str, image: Image.Image) -> Image.Image | None:
     if n > extent:
         return None
     # Pixel coordinates, going left and down
-    targets = [(c // cols, c % cols) for c in range(n)]
+    targets = [(c % cols, c // cols) for c in range(n)]
 
     # Alter 3 LSBs for each target pixel
     bit_length = 3
