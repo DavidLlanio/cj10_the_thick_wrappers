@@ -93,12 +93,12 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
         return
     # Save the image locally if the file extension is valid
     if cover:
-        file_paths.cover_image_fe = file_extension
+        file_paths.cover_image_fe = "png"
         fp = file_paths.get_cover_image_fp()
     else:
-        file_paths.user_image_fe = file_extension
+        file_paths.user_image_fe = "png"
         fp = file_paths.get_user_image_fp()
-    rgb_image.save(fp)
+    rgb_image.save(fp, format="PNG")
 
 
 def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = None):
