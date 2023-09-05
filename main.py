@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from nicegui import app, events, ui
 from PIL import Image
 
+from helper.decrypt_text_from_image import binary_decoder
 from helper.encrypt_text import encrypt_text
 
 
@@ -61,7 +62,6 @@ def show_output():
             ui.label("Output")
             ui.markdown(f"{text}")
             with ui.row():
-                ui.button("Download", on_click=ui.download(text_output_fp))
                 ui.button("Close", on_click=dialog.close)
         dialog.open()
     else:
@@ -179,14 +179,14 @@ def decrypt_event():
     with Image.open(cover_image_fp) as cimg:
         cimg.load()
     # Call the function to decrypt text from image
-    decrypt_text, end_code_found = placeholder_function(cimg)  # Text decryption function
+    decrypt_text, end_code_found = binary_decoder(cimg)
     # Save output as text file
     if end_code_found:
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
             os.remove(image_output_fp)
         # Create new output file
-        with open(text_output_fp) as f:
+        with open(text_output_fp, "w") as f:
             f.write(decrypt_text)
     else:
         # Remove output file if it exists
@@ -265,7 +265,7 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
             with ui.column():
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True))
         with ui.row():
-            ui.button("Decrypt", on_click=lambda: ui.notify("Decrypted!"))
+            ui.button("Decrypt", on_click=decrypt_event)
 
 # Initialize and run the GUI
 ui.run()
