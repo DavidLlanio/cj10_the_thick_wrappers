@@ -12,6 +12,9 @@ class Steganographizer:
         Apply image steganography by resetting the cover image's least significant 4 bits,
         take the secret image's most significant 4 bits and add both numpy arrays together.
         Sum of arrays is converted back into Pillow Image and returned.
+        :param cover: Image you want to hide into
+        :param secret: Image you want to hide
+        :return: A steganography Image object
         """
         print("Encrypting Image...")
         s_cover = StegaImage(cover)
@@ -23,7 +26,7 @@ class Steganographizer:
         return Image.fromarray(stega_image_array)
 
     @staticmethod
-    def decrypt_image(image: Image) -> Image:
+    def decrypt_image(image: Image.Image) -> Image.Image:
         """
         Robin's implementation
         """
