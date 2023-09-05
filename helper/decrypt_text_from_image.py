@@ -9,7 +9,7 @@ def all_pixels_to_binary(img):
 
     def pixel_to_bin(x, y):
         r, g, b = pixels[x, y]
-        r, g, b = str(bin(r))[2:], str(bin(g))[2:], str(bin(b))[2:]
+        r, g, b = str(bin(r))[2:].zfill(8), str(bin(g))[2:].zfill(8), str(bin(b))[2:].zfill(8)
         return r, g, b
 
 
@@ -30,16 +30,16 @@ def binary_decoder(img):
     RGB_binary_list = all_pixels_to_binary(img)
     word_total = ""
     for pixel in RGB_binary_list:
-        print(pixel)
         output = "0"
         r, g, b= pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
         output = output + (str(b) + str(g) + str(r))
         pixel_list.append(output)
+        print(pixel, output, bin_to_ascii(output))
     pixel_list.append("0010110000101100001011000010111000101110")  # forces a delimter incase one wasn't encrypted in
     while word_total[-5:] != ",,,..":
         for binary in pixel_list:
             word_total += bin_to_ascii(binary)
-    return word_total
+    return word_total[:500]
 
 
 def bin_to_ascii(binary):
