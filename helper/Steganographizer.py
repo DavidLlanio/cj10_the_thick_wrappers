@@ -7,7 +7,7 @@ from helper.StegaImage import StegaImage
 class Steganographizer:
 
     @staticmethod
-    def encrypt_image(cover: Image, secret: Image) -> Image:
+    def encrypt_image(cover: Image.Image, secret: Image.Image) -> Image.Image:
         """
         Apply image steganography by resetting the cover image's least significant 4 bits,
         take the secret image's most significant 4 bits and add both numpy arrays together.
@@ -24,4 +24,7 @@ class Steganographizer:
 
     @staticmethod
     def decrypt_image(image: Image) -> Image:
+        """
+        Robin's implementation
+        """
         pass
