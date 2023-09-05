@@ -50,7 +50,7 @@ def show_output():
     # If there is output use that as the content of the markdown
     if os.path.exists(image_output_fp):
         with ui.dialog() as dialog, ui.card():
-            ui.label("Output")
+            ui.label("Image Output")
             ui.markdown(f"![output]({image_output_fp})")
             with ui.row():
                 ui.button("Download", on_click=lambda: ui.download(image_output_fp))
@@ -60,7 +60,7 @@ def show_output():
         with open(text_output_fp, "r") as o:
             text = o.read()
         with ui.dialog() as dialog, ui.card():
-            ui.label("Output")
+            ui.label("Text Output")
             ui.markdown(f"{text}")
             with ui.row():
                 ui.button("Close", on_click=dialog.close)
