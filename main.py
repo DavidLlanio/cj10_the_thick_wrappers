@@ -66,7 +66,7 @@ def show_output():
                 ui.button("Close", on_click=dialog.close)
         dialog.open()
     else:
-        print("Something went wrong")
+        ui.notify("Something went wrong, please try again.")
 
 
 def handle_image_upload(img: events.UploadEventArguments, cover=False):
