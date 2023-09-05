@@ -24,7 +24,7 @@ class StegaImage:
         self._image_as_array = (self._image_as_array >> bits) << bits
         self._update_image()
 
-    def reset_msb(self) -> None:
+    def take_msb(self) -> None:
         """ Logical shift each pixel 4 bits to the right """
         bits = 4
         self._image_as_array = self._image_as_array >> bits
