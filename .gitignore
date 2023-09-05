@@ -34,5 +34,5 @@ build/
 .test_folder
 
 # Images
-*.png
-*.jpeg
+static/*.png
+static/*.jpeg
