@@ -33,6 +33,5 @@ build/
 # Custom
 .test_folder
 
-# Images
-static/*.png
-static/*.jpeg
+# Image folder
+static/
