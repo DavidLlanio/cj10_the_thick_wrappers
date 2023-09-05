@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from nicegui import app, events, ui
 from PIL import Image
 
+from helper.decrypt_image_from_image import decrypt_image
 from helper.decrypt_text_from_image import binary_decoder
 from helper.encrypt_text import encrypt_text
 from helper.Steganographizer import Steganographizer
@@ -195,9 +196,8 @@ def decrypt_event():
         if os.path.exists(text_output_fp):
             os.remove(text_output_fp)
         # Call the function to decrypt an image from an image
-        decrypt_image = placeholder_function(cimg)
         # Save output as an image
-        decrypt_image.save(image_output_fp)
+        decrypt_image(cimg).save(image_output_fp)
     show_output()
 
 
