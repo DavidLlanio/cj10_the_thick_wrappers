@@ -134,8 +134,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
             uimg = uimg.resize(cimg.size)
         # Call function to encrypt user image into cover image
-        output_image = Steganographizer(cimg, uimg)
-        output_image.encrypt_image()
+        output_image = Steganographizer.encrypt_image(cimg, uimg)
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
             os.remove(image_output_fp)
