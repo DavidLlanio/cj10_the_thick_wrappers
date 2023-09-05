@@ -3,7 +3,6 @@ import numpy as np
 
 
 class Steganographizer:
-
     __stego_image = None
 
     def __init__(self, cover: Image, secret: Image):
