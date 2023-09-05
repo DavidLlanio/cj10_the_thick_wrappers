@@ -13,13 +13,13 @@ class Steganographizer:
         take the secret image's most significant 4 bits and add both numpy arrays together.
         Sum of arrays is converted back into Pillow Image and returned.
         """
+        print("Encrypting Image...")
         s_cover = StegaImage(cover)
         s_secret = StegaImage(secret)
-        print("Encrypting Image...")
         s_cover.reset_lsb()
         s_secret.take_msb()
         stega_image_array = np.add(s_cover.get_image_array(), s_secret.get_image_array())
-        print("Complete!")
+        print("Encryption Complete!")
         return Image.fromarray(stega_image_array)
 
     @staticmethod
