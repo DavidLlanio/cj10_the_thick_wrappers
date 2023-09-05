@@ -8,6 +8,7 @@ from PIL import Image
 
 from helper.decrypt_text_from_image import binary_decoder
 from helper.encrypt_text import encrypt_text
+from helper.Steganographizer import Steganographizer
 
 
 @dataclass
@@ -133,14 +134,15 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
             uimg = uimg.resize(cimg.size)
         # Call function to encrypt user image into cover image
-        output_image = placeholder_function(uimg, cimg)
+        output_image = Steganographizer(cimg, uimg)
+        output_image.encrypt_image()
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
             os.remove(image_output_fp)
         elif os.path.exists(text_output_fp):
             os.remove(text_output_fp)
         # Save the output image
-        output_image.save(encrypt_output_image_fp)
+        output_image.save_image(encrypt_output_image_fp)
     elif value == "Text":
         # Check if there is text Input
         if text_input:
