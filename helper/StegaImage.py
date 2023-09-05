@@ -19,13 +19,19 @@ class StegaImage:
         self.image = Image.fromarray(self._image_as_array)
 
     def reset_lsb(self) -> None:
-        """ Logical shift each pixel 4 bits to the right and back """
+        """
+        Logical shift each pixel 4 bits to the right and back
+        1011 1111 --> 0000 1011 --> 1011 0000
+        """
         bits = 4
         self._image_as_array = (self._image_as_array >> bits) << bits
         self._update_image()
 
     def take_msb(self) -> None:
-        """ Logical shift each pixel 4 bits to the right """
+        """
+        Logical shift each pixel 4 bits to the right
+        1010 0110 --> 0000 1010
+        """
         bits = 4
         self._image_as_array = self._image_as_array >> bits
         self._update_image()
