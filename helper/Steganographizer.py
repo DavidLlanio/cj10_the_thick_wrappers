@@ -4,20 +4,26 @@ import numpy as np
 
 class Steganographizer:
 
-    stego_image = None
+    __stego_image = None
 
     def __init__(self, cover: Image, secret: Image):
-        self.cover = cover
-        self.secret = secret
+        self.__cover = cover
+        self.__secret = secret
 
-    def encrypt_image(self) -> Image:
-        cover_array = np.asarray(self.cover)
-        secret_array = np.asarray(self.secret)
-        cover_msb_shift = np.right_shift(4, cover_array)
-        cover_lsb_reset = np.left_shift(4, cover_msb_shift)
-        secret_msb_shift = np.right_shift(4, secret_array)
+    def encrypt_image(self) -> None:
+        shift_amount = 4
+        print("Encrypting Image...")
+        cover_array = np.asarray(self.__cover)
+        secret_array = np.asarray(self.__secret)
+        cover_msb_shift = np.right_shift(cover_array, shift_amount)
+        cover_lsb_reset = np.left_shift(cover_msb_shift, shift_amount)
+        secret_msb_shift = np.right_shift(secret_array, shift_amount)
         stega_bits = np.add(cover_lsb_reset, secret_msb_shift)
-        self.stego_image = Image.fromarray(stega_bits)
+        self.__stego_image = Image.fromarray(stega_bits)
+        print("Complete!")
 
     def save_image(self, destination: str) -> None:
-        self.stego_image.save(destination)
+        try:
+            self.__stego_image.save(destination)
+        except AttributeError:
+            print("No steganography image file found.")
