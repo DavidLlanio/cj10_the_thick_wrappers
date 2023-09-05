@@ -9,7 +9,6 @@ def all_pixels_to_binary(img):
         r, g, b = str(bin(r))[2:].zfill(8), str(bin(g))[2:].zfill(8), str(bin(b))[2:].zfill(8)
         return r, g, b
 
-
     # Iterates through all of the picture's pixels, left to right then down
     def pixel_list():
         for y in range(height):
@@ -28,13 +27,15 @@ def binary_decoder(img):
     word_total = ""
     for pixel in RGB_binary_list:
         output = "0"
-        r, g, b= pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
+        r, g, b = pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
         output = output + (str(b) + str(g) + str(r))
         pixel_list.append(output)
     for binary in pixel_list:
-        if word_total[-5:] != ",,,..":
-            word_total += bin_to_ascii(binary)
-    return word_total[:-5]
+        if word_total[-5:] == ",,,..":
+            delimiter = True
+            break
+        word_total += bin_to_ascii(binary)
+    return word_total[:-5], delimiter
 
 
 def bin_to_ascii(binary):
