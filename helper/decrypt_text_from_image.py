@@ -1,6 +1,3 @@
-from PIL import Image
-
-
 def all_pixels_to_binary(img):
     """Translates an inputted image's pixels to binary"""
     pixels = img.load()
@@ -25,7 +22,7 @@ def all_pixels_to_binary(img):
 
 def binary_decoder(img):
     """Iterates and checks every binary RGB triplet, scanning over the last 3 LSB"""
-    img = Image.open(img)
+    delimiter = False
     pixel_list = []
     RGB_binary_list = all_pixels_to_binary(img)
     word_total = ""
@@ -34,12 +31,10 @@ def binary_decoder(img):
         r, g, b= pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
         output = output + (str(b) + str(g) + str(r))
         pixel_list.append(output)
-        print(pixel, output, bin_to_ascii(output))
-    pixel_list.append("0010110000101100001011000010111000101110")  # forces a delimter incase one wasn't encrypted in
-    while word_total[-5:] != ",,,..":
-        for binary in pixel_list:
+    for binary in pixel_list:
+        if word_total[-5:] != ",,,..":
             word_total += bin_to_ascii(binary)
-    return word_total[:500]
+    return word_total[:-5]
 
 
 def bin_to_ascii(binary):
