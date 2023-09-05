@@ -15,9 +15,8 @@ class Steganographizer:
         print("Encrypting Image...")
         cover_array = np.asarray(self.__cover)
         secret_array = np.asarray(self.__secret)
-        cover_msb_shift = np.right_shift(cover_array, shift_amount)
-        cover_lsb_reset = np.left_shift(cover_msb_shift, shift_amount)
-        secret_msb_shift = np.right_shift(secret_array, shift_amount)
+        cover_lsb_reset = (cover_array >> shift_amount) << shift_amount
+        secret_msb_shift = secret_array >> shift_amount
         stega_bits = np.add(cover_lsb_reset, secret_msb_shift)
         self.__stego_image = Image.fromarray(stega_bits)
         print("Complete!")
