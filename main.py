@@ -7,7 +7,7 @@ from nicegui import app, events, ui
 from PIL import Image
 
 from helper.decrypt_image_from_image import decrypt_image
-from helper.decrypt_text_from_image import binary_decoder
+from helper.decrypt import decrypt_text_from_image
 from helper.encrypt_text import encrypt_text
 from helper.Steganographizer import Steganographizer
 
@@ -205,7 +205,7 @@ def decrypt_event():
     with Image.open(cover_image_fp) as cimg:
         cimg.load()
     # Call the function to decrypt text from image
-    decrypt_text, end_code_found = binary_decoder(cimg)
+    decrypt_text, end_code_found = decrypt_text_from_image(cimg)
     # Save output as text file
     if end_code_found:
         # Remove output file if it exists
