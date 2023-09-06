@@ -10,7 +10,7 @@ class APLInfo:
     software = "A Pixel Life"
     description = "Python Discord Summer Code Jam 2023 - The Thick Wrappers Project"
 
-    def set_model(self, value) -> None:
+    def set_model(self, value: tuple[int, int]) -> None:
         width, height = 0, 1
         self.model = f"A{value[width]}P{value[height]}L"
 
