@@ -1,6 +1,7 @@
-from utility import *
+from utility import get_pixels_from_image
 
-def decrypt_text_from_image(img):
+
+def decrypt_text_from_image(img) -> tuple:
     """Iterates and checks every binary RGB triplet, scanning over the LSB"""
     delimiter = False
     pixel_list, word_total = [], ""
@@ -13,14 +14,13 @@ def decrypt_text_from_image(img):
         output = output + (str(b) + str(g) + str(r))
         pixel_list.append(int(output, 2))
 
-    # Iterates through each binary output and converts each binary to ASCII
+    # Iterates through each binary output and converts each binary to ASCII, simultaneously checking for the delimiter
     for binary in pixel_list:
         if word_total[-5:] == ",,,..":
             delimiter = True
             break
         word_total += format(binary, "c")
     return word_total[:-5], delimiter
-
 
 
 def decrypt_image_from_image():
