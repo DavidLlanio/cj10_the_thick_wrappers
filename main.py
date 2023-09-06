@@ -142,7 +142,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         elif os.path.exists(text_output_fp):
             os.remove(text_output_fp)
         # Save the output image
-        output_image.save_image(encrypt_output_image_fp)
+        output_image.save(encrypt_output_image_fp)
     elif value == "Text":
         # Check if there is text Input
         if text_input:
