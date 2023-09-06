@@ -222,8 +222,12 @@ def decrypt_event():
     text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
     image_output_fp = file_paths.get_decrypted_output_file_path()
     # Open the cover image
-    with Image.open(cover_image_fp) as cimg:
-        cimg.load()
+    try:
+        with Image.open(cover_image_fp) as cimg:
+            cimg.load()
+    except InvalidFileError:
+        ui.notify("Cover image file can't be read!")
+        return
     # Call the function to decrypt text from image
     decrypt_text, end_code_found = decrypt_text_from_image(cimg)
     # Save output as text file
