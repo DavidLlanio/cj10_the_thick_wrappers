@@ -1,5 +1,4 @@
 from PIL import Image
-from PIL.Image import Exif
 
 from helper.utility import clear_least_significant_bits_asarray, msb_to_lsb_asarray
 
