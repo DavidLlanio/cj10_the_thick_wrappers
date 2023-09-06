@@ -5,14 +5,12 @@ def convert_pixels_to_binary(img):
     pixellist = []
 
     # Iterates through all of the picture's pixels, left to right then down
-    def pixel_list():
-        for y in range(height):
-            for x in range(width):
-                r, g, b = pixels[x, y]
-                r, g, b = str(bin(r))[2:].zfill(8), str(bin(g))[2:].zfill(8), str(bin(b))[2:].zfill(8)
-                pixellist.append((r, g, b))
-        return pixellist
-    return pixel_list()
+    for y in range(height):
+        for x in range(width):
+            r, g, b = pixels[x, y]
+            r, g, b = str(bin(r))[2:].zfill(8), str(bin(g))[2:].zfill(8), str(bin(b))[2:].zfill(8)
+            pixellist.append((r, g, b))
+    return pixellist
 
 
 def binary_decoder(img):
