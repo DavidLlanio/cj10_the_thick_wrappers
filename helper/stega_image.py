@@ -17,6 +17,7 @@ class StegaImage:
     def _update_image(self) -> None:
         """ Convert array back to Image object """
         self.image = Image.fromarray(self._image_as_array)
+        self._image_as_array = np.asarray(self.image)
 
     def reset_lsb(self) -> None:
         """
