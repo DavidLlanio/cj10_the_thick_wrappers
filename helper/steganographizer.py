@@ -1,7 +1,6 @@
 from PIL import Image
-import numpy as np
 
-from helper.StegaImage import StegaImage
+from helper.stega_image import StegaImage
 
 
 class Steganographizer:
@@ -16,14 +15,16 @@ class Steganographizer:
         :param secret: Image you want to hide
         :return: A steganography Image object
         """
-        print("Encrypting Image...")
         s_cover = StegaImage(cover)
         s_secret = StegaImage(secret)
         s_cover.reset_lsb()
         s_secret.take_msb()
-        stega_image_array = np.add(s_cover.get_image_array(), s_secret.get_image_array())
-        print("Encryption Complete!")
-        return Image.fromarray(stega_image_array)
+        s_stega = s_cover.get_image_array().copy()
+        if len(s_secret.get_image_array()) < len(s_cover.get_image_array()):
+            s_stega[:s_secret.get_image_array().shape[0], :s_secret.get_image_array().shape[1]] += s_secret.get_image_array()
+        else:
+            s_stega += s_secret.get_image_array()
+        return Image.fromarray(s_stega)
 
     @staticmethod
     def decrypt_image(image: Image.Image) -> Image.Image:
