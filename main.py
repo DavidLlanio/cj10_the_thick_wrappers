@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from nicegui import app, events, ui
 from PIL import Image
 
+from helper.decrypt_image_from_image import decrypt_image
 from helper.decrypt_text_from_image import binary_decoder
 from helper.encrypt_text import encrypt_text
 from helper.Steganographizer import Steganographizer
@@ -66,7 +67,7 @@ def show_output():
                 ui.button("Close", on_click=dialog.close)
         dialog.open()
     else:
-        print("Something went wrong")
+        ui.notify("Something went wrong, please try again.")
 
 
 def handle_image_upload(img: events.UploadEventArguments, cover=False):
@@ -134,15 +135,14 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
             uimg = uimg.resize(cimg.size)
         # Call function to encrypt user image into cover image
-        output_image = Steganographizer(cimg, uimg)
-        output_image.encrypt_image()
+        output_image = Steganographizer.encrypt_image(cimg, uimg)
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
             os.remove(image_output_fp)
         elif os.path.exists(text_output_fp):
             os.remove(text_output_fp)
         # Save the output image
-        output_image.save_image(encrypt_output_image_fp)
+        output_image.save(encrypt_output_image_fp)
     elif value == "Text":
         # Check if there is text Input
         if text_input:
@@ -195,9 +195,8 @@ def decrypt_event():
         if os.path.exists(text_output_fp):
             os.remove(text_output_fp)
         # Call the function to decrypt an image from an image
-        decrypt_image = placeholder_function(cimg)
         # Save output as an image
-        decrypt_image.save(image_output_fp)
+        decrypt_image(cimg).save(image_output_fp)
     show_output()
 
 
