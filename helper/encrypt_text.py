@@ -1,3 +1,4 @@
+import numpy as np
 from PIL import Image
 
 ASCII_MAX = 127
@@ -43,28 +44,28 @@ def encrypt_text(text: str, image: Image.Image) -> Image.Image | None:
     bytes = strip_non_ascii(text.strip()) + END_BYTES
     n = len(bytes)
     cols, rows = image.size
-
     extent = cols * rows
     # Alert caller if too many bytes to encode
     if n > extent:
         return None
-    # Pixel coordinates, going left and down
-    targets = [(c % cols, c // cols) for c in range(n)]
 
-    # Alter 3 LSBs for each target pixel
-    bit_length = 3
-    modulus = 2 ** bit_length
-    output = image.copy()
+    # Create array from ASCII codes with image's width and height,
+    # padded with zeroes
+    bytes = np.array(bytes, dtype=np.uint8)
+    pixels = np.array(image, dtype=np.uint8)
+    mask = np.concatenate((bytes, np.zeros(extent - n, dtype=np.uint8)), dtype=np.uint8).reshape((rows, cols))
 
-    for target, byte in zip(targets, bytes):
-        pixel: list[int] = list(output.getpixel(target))
-
-        for i, plane in enumerate(pixel):
-            # Clear 3 LSB
-            plane >>= bit_length
-            plane <<= bit_length
-            pixel[i] = plane + byte % modulus
-            byte >>= bit_length
-        output.putpixel(target, tuple(pixel))
-
-    return output
+    modulus = 2 ** 3
+    # Clear pixels' LSB
+    pixels >>= 3
+    pixels <<= 3
+    # Add array to each channel to encode bits
+    # Red
+    pixels[:, :, 0] += mask % modulus
+    mask >>= 3
+    # Green
+    pixels[:, :, 1] += mask % modulus
+    mask >>= 3
+    # Blue
+    pixels[:, :, 2] += mask
+    return Image.fromarray(pixels)
