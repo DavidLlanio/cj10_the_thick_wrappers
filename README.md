@@ -1,5 +1,4 @@
 # Python Discord Code Jam Repository Template
-Poop with pre-commit
 
 ## A Primer
 Hello code jam participants! We've put together this repository template for you to use in [our code jams](https://pythondiscord.com/events/) or even other Python events!
