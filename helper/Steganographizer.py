@@ -1,27 +1,33 @@
 from PIL import Image
 import numpy as np
 
+from helper.StegaImage import StegaImage
+
 
 class Steganographizer:
-    __stego_image = None
 
-    def __init__(self, cover: Image, secret: Image):
-        self.__cover = cover
-        self.__secret = secret
-
-    def encrypt_image(self) -> None:
-        shift_amount = 4
+    @staticmethod
+    def encrypt_image(cover: Image.Image, secret: Image.Image) -> Image.Image:
+        """
+        Apply image steganography by resetting the cover image's least significant 4 bits,
+        take the secret image's most significant 4 bits and add both numpy arrays together.
+        Sum of arrays is converted back into Pillow Image and returned.
+        :param cover: Image you want to hide into
+        :param secret: Image you want to hide
+        :return: A steganography Image object
+        """
         print("Encrypting Image...")
-        cover_array = np.asarray(self.__cover)
-        secret_array = np.asarray(self.__secret)
-        cover_lsb_reset = (cover_array >> shift_amount) << shift_amount
-        secret_msb_shift = secret_array >> shift_amount
-        stega_bits = np.add(cover_lsb_reset, secret_msb_shift)
-        self.__stego_image = Image.fromarray(stega_bits)
-        print("Complete!")
+        s_cover = StegaImage(cover)
+        s_secret = StegaImage(secret)
+        s_cover.reset_lsb()
+        s_secret.take_msb()
+        stega_image_array = np.add(s_cover.get_image_array(), s_secret.get_image_array())
+        print("Encryption Complete!")
+        return Image.fromarray(stega_image_array)
 
-    def save_image(self, destination: str) -> None:
-        try:
-            self.__stego_image.save(destination)
-        except AttributeError:
-            print("No steganography image file found.")
+    @staticmethod
+    def decrypt_image(image: Image.Image) -> Image.Image:
+        """
+        Robin's implementation
+        """
+        pass
