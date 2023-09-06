@@ -10,7 +10,7 @@ from helper.decrypt_image_from_image import decrypt_image
 from helper.encrypt_text import encrypt_text
 from helper.Steganographizer import Steganographizer
 
-InvalidFileError = (FileNotFoundError, IOError, Image.UnidentifiedImageError)
+InvalidFileError = (OSError, Image.UnidentifiedImageError)
 
 
 @dataclass
@@ -186,7 +186,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
             except FileNotFoundError:
                 ui.notify("Text input file not found!")
                 return
-            except IOError:
+            except OSError:
                 ui.notify("Error reading text input!")
                 return
 
