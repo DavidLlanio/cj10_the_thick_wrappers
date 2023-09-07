@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from nicegui import app, events, ui
 from PIL import Image
 
-from helper.apl_info import APLInfo
+from helper import embed_apl_exif
 from helper.decrypt_image_from_image import decrypt_image
 from helper.decrypt_text_from_image import binary_decoder
 from helper.encrypt import encrypt_image_to_image
@@ -136,8 +136,8 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
             uimg = uimg.resize(cimg.size)
         # Call function to encrypt user image into cover image
-        exif_data = APLInfo()
-        exif_data.set_model(uimg.size)
+        user_image_exif_data = uimg.getexif()
+        new_exif_data = embed_apl_exif(user_image_exif_data, uimg.size)
         output_image = encrypt_image_to_image(cimg, uimg)
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
@@ -145,7 +145,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str = N
         elif os.path.exists(text_output_fp):
             os.remove(text_output_fp)
         # Save the output image
-        output_image.save(encrypt_output_image_fp, exif=exif_data)
+        output_image.save(encrypt_output_image_fp, exif=new_exif_data)
     elif value == "Text":
         # Check if there is text Input
         if text_input:
