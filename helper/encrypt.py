@@ -1,6 +1,6 @@
 from PIL import Image
 
-from helper.utility import clear_least_significant_bits_asarray, msb_to_lsb_asarray
+from helper import Direction, BITS_4, shift_image_bits_asarray
 
 
 def encrypt_text_to_image():
@@ -11,16 +11,17 @@ def encrypt_text_to_image():
 def encrypt_image_to_image(cover: Image.Image, secret: Image.Image) -> Image.Image:
     """
     Apply image steganography by resetting the cover image's least significant 4 bits,
-    take the secret image's most significant 4 bits and add both numpy arrays together.
-    Sum of arrays is converted back into Pillow Image and returned.
+    take the secret image's most significant 4 bits and add both numpy arrays together\n
+    Sum of arrays is converted back into Pillow Image and returned
     :param cover: Image you want to hide into
     :param secret: Image you want to hide
     :return: A steganography Image object
     """
-    cover_msb = clear_least_significant_bits_asarray(cover)
-    secret_msb = msb_to_lsb_asarray(secret)
-    stega = cover_msb.copy()
-    if secret_msb.size < cover_msb.size:
+    cover_msb = shift_image_bits_asarray(cover, Direction.RIGHT, BITS_4)
+    cover_lsb_reset = shift_image_bits_asarray(cover_msb, Direction.LEFT, BITS_4)
+    secret_msb = shift_image_bits_asarray(secret, Direction.RIGHT, BITS_4)
+    stega = cover_lsb_reset.copy()
+    if secret_msb.size < cover_lsb_reset.size:
         height, width, _ = secret_msb.shape
         stega[:height, :width] += secret_msb
     else:
