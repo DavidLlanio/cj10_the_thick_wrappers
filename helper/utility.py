@@ -12,6 +12,13 @@ class ResizeMode(Enum):
     SHRINK_TO_SCALE = 1
 
 
+class Sizing(Enum):
+    SMALLER = 0
+    WIDER = 1
+    TALLER = 2
+    BIGGER = 3
+
+
 def get_pixels_from_image():
     """Function that will get pixels from pillow image object"""
     pass
@@ -35,6 +42,12 @@ def msb_to_lsb_asarray(image: Image.Image) -> np.ndarray:
 
 
 def embed_exif(image_exif: Image.Image, data: APLInfo) -> Exif:
+    """
+    Update image EXIF image data
+    :param image_exif: Image object metadata is extracted from
+    :param data: New metadata to embed
+    :return: Return updated image EXIF type
+    """
     exif = image_exif.getexif()
     exif[APLExif.MAKE.value] = data.make
     exif[APLExif.MODEL.value] = data.model
@@ -44,44 +57,47 @@ def embed_exif(image_exif: Image.Image, data: APLInfo) -> Exif:
     return exif
 
 
-def resize_image(image: Image.Image, max_dimension: tuple[int, int], mode=ResizeMode.DEFAULT) -> Image.Image:
+def resize_image(image: Image.Image, max_dimension: tuple[int, int], resize_mode=ResizeMode.DEFAULT) -> Image.Image:
     """
     Resize image object.\n
     DEFAULT - Crop any exceeding dimensions\n
     SHRINK_TO_SCALE - Shrink image to scale of maximum dimensions while keeping aspect ratio\n
     :param image: Image object
     :param max_dimension: Dimensions image cannot exceed
-    :param mode: Resize mode
-    :return: Resized Image object
+    :param resize_mode: Resize mode
+    :return: Resized Image object. Returns the same image if smaller than max dimensions.
     """
     current_image_width, current_image_height = image.size
     max_width, max_height = max_dimension
     image_copy = image.copy()
-    match mode:
+    sizing_mode = Sizing.SMALLER
+    if (current_image_width > max_width) and (current_image_height < max_height):
+        sizing_mode = Sizing.WIDER
+    if (current_image_height > max_height) and (current_image_width < max_width):
+        sizing_mode = Sizing.TALLER
+    if (current_image_height > max_height) and (current_image_width > max_width):
+        sizing_mode = Sizing.BIGGER
+    match resize_mode:
         case ResizeMode.DEFAULT:
-            # if wider
-            if (current_image_width > max_width) and (current_image_height < max_height):
-                image_copy.crop((0, 0, max_width, current_image_height))
-            # if taller
-            if (current_image_height > max_height) and (current_image_width < max_width):
-                image_copy.crop((0, 0, current_image_width, max_height))
-            # if bigger
-            if (current_image_height > max_height) and (current_image_width > max_width):
-                image_copy = image_copy.crop((0, 0, max_width, max_height))
+            match sizing_mode:
+                case Sizing.BIGGER:
+                    image_copy = image_copy.crop((0, 0, max_width, max_height))
+                case Sizing.TALLER:
+                    image_copy.crop((0, 0, current_image_width, max_height))
+                case Sizing.WIDER:
+                    image_copy.crop((0, 0, max_width, current_image_height))
         case ResizeMode.SHRINK_TO_SCALE:
-            # if wider
-            if (current_image_width > max_width) and (current_image_height < max_height):
-                width_ratio = current_image_width / max_width
-                new_height = int(current_image_height // width_ratio)
-                image_copy.thumbnail((max_width, new_height), Image.LANCZOS)
-            # if taller
-            if (current_image_height > max_height) and (current_image_width < max_width):
-                height_ratio = current_image_height / max_height
-                new_width = int(current_image_width // height_ratio)
-                image_copy.thumbnail((new_width, max_height), Image.LANCZOS)
-            # if bigger
-            if (current_image_height > max_height) and (current_image_width > max_width):
-                image_copy.thumbnail((max_width, max_height), Image.LANCZOS)
+            match sizing_mode:
+                case Sizing.BIGGER:
+                    image_copy.thumbnail((max_width, max_height), Image.LANCZOS)
+                case Sizing.TALLER:
+                    height_ratio = current_image_height / max_height
+                    new_width = int(current_image_width // height_ratio)
+                    image_copy.thumbnail((new_width, max_height), Image.LANCZOS)
+                case Sizing.WIDER:
+                    width_ratio = current_image_width / max_width
+                    new_height = int(current_image_height // width_ratio)
+                    image_copy.thumbnail((max_width, new_height), Image.LANCZOS)
     return image_copy
 
 
