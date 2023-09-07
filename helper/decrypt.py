@@ -1,5 +1,5 @@
 from .utility import get_pixels_from_image
-
+import numpy as np
 
 def decrypt_text_from_image(img) -> tuple:
     """Iterates and checks every binary RGB triplet, scanning over the LSB"""
