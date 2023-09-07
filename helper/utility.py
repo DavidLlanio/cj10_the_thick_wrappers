@@ -32,7 +32,7 @@ def shift_image_bits_asarray(image: Image.Image, direction: Direction, bit_amoun
             return np.right_shift(image_asarray, bit_amount)
 
 
-def embed_apl_exif(image_exif: Exif, data: tuple[int, int]) -> Exif:
+def exif_embed_apl(image_exif: Exif, data: tuple[int, int]) -> Exif:
     """
     Implement A Pixel Life metadata
     :param image_exif: Image metadata
@@ -57,7 +57,7 @@ def exif_model_builder(size: tuple[int, int]) -> str:
     return f"A{width}P{height}L"
 
 
-def resize_image(image: Image.Image, max_dimension: tuple[int, int], resize_mode=ResizeMode.DEFAULT) -> Image.Image:
+def image_resize(image: Image.Image, max_dimension: tuple[int, int], resize_mode=ResizeMode.DEFAULT) -> Image.Image:
     """
     Resize image object\n
     DEFAULT - Crop any exceeding dimensions\n
@@ -70,16 +70,12 @@ def resize_image(image: Image.Image, max_dimension: tuple[int, int], resize_mode
     current_image_width, current_image_height = image.size
     max_width, max_height = max_dimension
     image_copy = image.copy()
-    sizing_mode = Sizing.SMALLER
-    if (current_image_height > max_height) and (current_image_width > max_width):
-        sizing_mode = Sizing.BIGGER
-    if (current_image_height > max_height) and (current_image_width < max_width):
-        sizing_mode = Sizing.TALLER
-    if (current_image_width > max_width) and (current_image_height < max_height):
-        sizing_mode = Sizing.WIDER
+    sizing_mode = image_size_compare(current_image_width, current_image_height, max_width, max_height)
     match resize_mode:
         case ResizeMode.DEFAULT:
             match sizing_mode:
+                case Sizing.SMALLER:
+                    pass
                 case Sizing.BIGGER:
                     image_copy = image_copy.crop((STARTING_X, STARTING_Y, max_width, max_height))
                 case Sizing.TALLER:
@@ -88,6 +84,8 @@ def resize_image(image: Image.Image, max_dimension: tuple[int, int], resize_mode
                     image_copy.crop((STARTING_X, STARTING_Y, max_width, current_image_height))
         case ResizeMode.SHRINK_TO_SCALE:
             match sizing_mode:
+                case Sizing.SMALLER:
+                    pass
                 case Sizing.BIGGER:
                     image_copy.thumbnail((max_width, max_height), Image.LANCZOS)
                 case Sizing.TALLER:
@@ -99,6 +97,24 @@ def resize_image(image: Image.Image, max_dimension: tuple[int, int], resize_mode
                     new_height = int(current_image_height // width_ratio)
                     image_copy.thumbnail((max_width, new_height), Image.LANCZOS)
     return image_copy
+
+
+def image_size_compare(image_width: int, image_height: int, max_width: int, max_height) -> Sizing:
+    """
+    Determine whether image is smaller, bigger, taller or wider than maximum dimension
+    :param image_width:
+    :param image_height:
+    :param max_width:
+    :param max_height:
+    :return: Sizing mode
+    """
+    if (image_width > max_width) and (image_height > max_height):
+        return Sizing.BIGGER
+    if (image_width > max_width) and (image_height < max_height):
+        return Sizing.TALLER
+    if (image_width > max_width) and (image_height < max_height):
+        return Sizing.WIDER
+    return Sizing.SMALLER
 
 
 def set_least_significant_bits(bits, content):
