@@ -1,4 +1,4 @@
-from utility import get_pixels_from_image
+from .utility import get_pixels_from_image
 
 
 def decrypt_text_from_image(img) -> tuple:
