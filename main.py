@@ -1,15 +1,16 @@
 import io
 import os
-import re
 from dataclasses import dataclass
 
 from nicegui import app, events, ui
 from PIL import Image
 
-from helper.decrypt_image_from_image import decrypt_image
 from helper.decrypt import decrypt_text_from_image
+from helper.decrypt_image_from_image import decrypt_image
 from helper.encrypt_text import encrypt_text
 from helper.Steganographizer import Steganographizer
+
+InvalidFileError = (OSError, Image.UnidentifiedImageError)
 
 
 @dataclass
@@ -77,6 +78,7 @@ def show_output():
 
 def handle_text_file_upload(file: events.UploadEventArguments) -> str | None:
     """Read a text file selected as an encryption message"""
+    # Try to parse file as text, aborting if this fails
     with file.content as f:
         bytes = f.read()
     try:
@@ -103,15 +105,20 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
     # Get the binary of the tempfile object
     content = img.content.read()
     # Create a pillow image object using the binary
-    with Image.open(io.BytesIO(content)) as image:
-        image.load()
-        rgb_image = image.convert("RGB")
-    # Get the extension using regex and check that it is valid
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            image.load()
+            rgb_image = image.convert("RGB")
+    except Image.UnidentifiedImageError:
+        ui.notify("Could not load image!")
+        return
+    # Get the extension and check that it is present and valid
     acceptable_extensions = ["jpg", "png", "jpeg"]
-    file_extension = re.search(r"\.([a-zA-Z0-9]+)$", img.name).group(1)
-    if file_extension not in acceptable_extensions:
+    file_extension = os.path.splitext(img.name)[1]
+    if not file_extension or file_extension[1:] not in acceptable_extensions:
         ui.notify("Not an acceptable file type!")
         return
+    file_extension = file_extension[1:]
     # Save the image locally if the file extension is valid
     if cover:
         file_paths.cover_image_fe = "png"
@@ -125,7 +132,7 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
 def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | None = None):
     """Function that checks if conditions for encryption are met and calls encrypt fucntion
 
-    This function will check whether text or image is being encrypted into the cover_iamge.
+    This function will check whether text or image is being encrypted into the cover_image.
     If it is an image it will first check if the user_image is smaller or equal
     in size to cover_image. If user_image is too large it will resize it to be the same
     size as the cover_image. Then, the appropriate function will be called to encrypt
@@ -143,13 +150,21 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
     text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
     image_output_fp = file_paths.get_decrypted_output_file_path()
     # Open the cover image
-    with Image.open(cover_image_fp) as cimg:
-        cimg.load()
-    # Check if user image is larger than cover image, resize if it is
+    try:
+        with Image.open(cover_image_fp) as cimg:
+            cimg.load()
+    except InvalidFileError:
+        ui.notify("Cover image file cannot be read!")
+        return
+        # Check if user image is larger than cover image, resize if it is
     if value == "Image":
         # Open user image
-        with Image.open(user_image_fp) as uimg:
-            uimg.load()
+        try:
+            with Image.open(user_image_fp) as uimg:
+                uimg.load()
+        except InvalidFileError:
+            ui.notify("Encryption image file cannot be read!")
+            return
         # Check sizes
         if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
             uimg = uimg.resize(cimg.size)
@@ -165,12 +180,14 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
     elif value == "Text":
         # Check if there is text input, possibly from user-provided file
         if not text_input:
-            if os.path.exists(file_paths.get_user_text_fp()):
-                with open(file_paths.get_user_text_fp(), "r") as f:
+            try:
+                with open(file_paths.get_user_text_fp()) as f:
                     text_input = f.read()
-                    os.remove(file_paths.get_user_text_fp())
-            else:
-                ui.notify("Please input a text message to encrypt!")
+            except FileNotFoundError:
+                ui.notify("Text input file not found!")
+                return
+            except OSError:
+                ui.notify("Error reading text input!")
                 return
 
         # Call function to encrypt text into cover image
@@ -179,6 +196,9 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
         if output_image is None:
             ui.notify("Text message is too long for image!")
             return
+        # Only remove input if encryption succeeded
+        if os.path.exists(file_paths.get_user_text_fp()):
+            os.remove(file_paths.get_user_text_fp())
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
             os.remove(image_output_fp)
@@ -193,7 +213,7 @@ def decrypt_event():
     """Function that does procedures for decryption
 
     Loads up the cover_image gotten from the user
-    and calls the decrypt functions. If the text funciton detects text
+    and calls the decrypt functions. If the text function detects text
     a text file with the decrypted message will be saved as a text file.
     Otherwise, the decrypted image will be saved.
     """
@@ -202,8 +222,12 @@ def decrypt_event():
     text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
     image_output_fp = file_paths.get_decrypted_output_file_path()
     # Open the cover image
-    with Image.open(cover_image_fp) as cimg:
-        cimg.load()
+    try:
+        with Image.open(cover_image_fp) as cimg:
+            cimg.load()
+    except InvalidFileError:
+        ui.notify("Cover image file can't be read!")
+        return
     # Call the function to decrypt text from image
     decrypt_text, end_code_found = decrypt_text_from_image(cimg)
     # Save output as text file
