@@ -71,6 +71,7 @@ def resize_image(image: Image.Image, max_dimension: tuple[int, int], resize_mode
     max_width, max_height = max_dimension
     image_copy = image.copy()
     sizing_mode = Sizing.SMALLER
+    starting_point = 0
     if (current_image_width > max_width) and (current_image_height < max_height):
         sizing_mode = Sizing.WIDER
     if (current_image_height > max_height) and (current_image_width < max_width):
@@ -81,11 +82,11 @@ def resize_image(image: Image.Image, max_dimension: tuple[int, int], resize_mode
         case ResizeMode.DEFAULT:
             match sizing_mode:
                 case Sizing.BIGGER:
-                    image_copy = image_copy.crop((0, 0, max_width, max_height))
+                    image_copy = image_copy.crop((starting_point, starting_point, max_width, max_height))
                 case Sizing.TALLER:
-                    image_copy.crop((0, 0, current_image_width, max_height))
+                    image_copy.crop((starting_point, starting_point, current_image_width, max_height))
                 case Sizing.WIDER:
-                    image_copy.crop((0, 0, max_width, current_image_height))
+                    image_copy.crop((starting_point, starting_point, max_width, current_image_height))
         case ResizeMode.SHRINK_TO_SCALE:
             match sizing_mode:
                 case Sizing.BIGGER:
