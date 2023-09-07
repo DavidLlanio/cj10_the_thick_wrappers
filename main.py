@@ -166,8 +166,13 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
             ui.notify("Encryption image file cannot be read!")
             return
         # Check sizes
-        if uimg.size[0] > cimg.size[0] and uimg.size[1] > cimg.size[1]:
-            uimg = uimg.resize(cimg.size)
+        if uimg.size[0] > cimg.size[0] or uimg.size[1] > cimg.size[1]:
+            with ui.dialog() as dialog, ui.card():
+                ui.label("The image you want to encrypt is larger than the cover \
+                         image in one or both dimensions. It will be resized.")
+                with ui.row():
+                    ui.button("Continue", on_click=dialog.close)
+            dialog.open()
         # Call function to encrypt user image into cover image
         output_image = Steganographizer.encrypt_image(cimg, uimg)
         # Remove output file if it exists
@@ -309,7 +314,7 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
             with ui.column():
                 ui.label("Enter Image to Encrypt:")
             with ui.column():
-                ui.upload(auto_upload=True, on_upload=handle_image_upload, max_files=1)
+                ui.upload(auto_upload=True, on_upload=handle_image_upload, max_files=1,)
         # Prompt the user for the image they want to encrypt a message into
         with ui.row():
             with ui.column():
