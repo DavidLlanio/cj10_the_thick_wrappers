@@ -1,3 +1,5 @@
+from PIL.Image import Image
+
 from .utility import get_pixels_from_image
 
 
@@ -23,6 +25,6 @@ def decrypt_text_from_image(img) -> tuple:
     return word_total[:-5], delimiter
 
 
-def decrypt_image_from_image():
-    """Function that will decrypt image from image"""
-    pass
+def decrypt_image_from_image(image: Image) -> Image:
+    """Decrypt the secret image from the given input image"""
+    return image.point(lambda byte: (byte & 0b00001111) << 4)
