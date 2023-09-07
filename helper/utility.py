@@ -30,12 +30,24 @@ def clear_least_significant_bits(bits):
 
 
 def clear_least_significant_bits_asarray(image: Image.Image) -> np.ndarray:
+    """
+    Reset image least significant bit values.
+    1101 1011 -> 0000 1101 -> 1101 0000
+    :param image: Image object
+    :return: Return RGB values as numpy array
+    """
     bits = 4
     image_as_array = np.asarray(image)
     return (image_as_array >> bits) << bits
 
 
 def msb_to_lsb_asarray(image: Image.Image) -> np.ndarray:
+    """
+    Shift image most significant bit to least significant bit.
+    1101 1011 -> 0000 1101
+    :param image: Image object
+    :return: Return RGB values as numpy array
+    """
     bits = 4
     image_as_array = np.asarray(image)
     return image_as_array >> bits
