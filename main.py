@@ -64,10 +64,6 @@ class TailwindStyling():
     button_center = "mx-auto"
 
 
-def placeholder_function(*args, **kwargs):  # noqa: D103
-    return [None, None]
-
-
 # GUI callback functions
 def show_output():
     """Creates dialog with output"""
