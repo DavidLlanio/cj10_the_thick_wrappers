@@ -16,9 +16,9 @@ class ResizeMode(Enum):
 
 class Sizing(Enum):
     SMALLER = 0
-    WIDER = 1
+    BIGGER = 1
     TALLER = 2
-    BIGGER = 3
+    WIDER = 3
 
 
 class Direction(Enum):
