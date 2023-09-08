@@ -119,7 +119,7 @@ def image_size_compare(image_width: int, image_height: int, max_width: int, max_
     """
     if (image_width > max_width) and (image_height > max_height):
         return Sizing.BIGGER
-    if (image_width > max_width) and (image_height < max_height):
+    if (image_width < max_width) and (image_height > max_height):
         return Sizing.TALLER
     if (image_width > max_width) and (image_height < max_height):
         return Sizing.WIDER
