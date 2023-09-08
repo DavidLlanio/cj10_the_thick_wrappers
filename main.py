@@ -3,14 +3,14 @@ import os
 from dataclasses import dataclass
 
 from nicegui import app, events, ui
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 from helper.decrypt import decrypt_image_from_image, decrypt_text_from_image
-from helper import exif_embed_ipp
+from helper import exif_embed_ipp, ResizeMode, image_resize
 from helper.encrypt import encrypt_image_to_image
 from helper.encrypt_text import encrypt_text
 
-InvalidFileError = (OSError, Image.UnidentifiedImageError)
+InvalidFileError = (OSError, UnidentifiedImageError)
 
 
 @dataclass
@@ -109,7 +109,7 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
         with Image.open(io.BytesIO(content)) as image:
             image.load()
             rgb_image = image.convert("RGB")
-    except Image.UnidentifiedImageError:
+    except UnidentifiedImageError:
         ui.notify("Could not load image!")
         return
     # Get the extension and check that it is present and valid
@@ -174,9 +174,10 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
                     ui.button("Continue", on_click=dialog.close)
             dialog.open()
         # Call function to encrypt user image into cover image
-        user_image_exif_data = uimg.getexif()
-        new_exif_data = exif_embed_ipp(user_image_exif_data, uimg.size)
-        output_image = encrypt_image_to_image(cimg, uimg)
+        resized_uimg = image_resize(uimg, cimg.size, ResizeMode.SHRINK_TO_SCALE)
+        user_image_exif_data = resized_uimg.getexif()
+        new_exif_data = exif_embed_ipp(user_image_exif_data, resized_uimg.size)
+        output_image = encrypt_image_to_image(cimg, resized_uimg)
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
             os.remove(image_output_fp)
