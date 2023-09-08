@@ -1,3 +1,4 @@
+import numpy as np
 from PIL import Image
 
 from helper import Direction, BITS_4, shift_image_bits_asarray
@@ -17,13 +18,15 @@ def encrypt_image_to_image(cover: Image.Image, secret: Image.Image) -> Image.Ima
     :param secret: Image you want to hide
     :return: A steganography Image object
     """
-    cover_msb = shift_image_bits_asarray(cover, Direction.RIGHT, BITS_4)
+    cover_asarray = np.asarray(cover)
+    secret_asarray = np.asarray(secret)
+    cover_msb = shift_image_bits_asarray(cover_asarray, Direction.RIGHT, BITS_4)
     cover_lsb_reset = shift_image_bits_asarray(cover_msb, Direction.LEFT, BITS_4)
-    secret_msb = shift_image_bits_asarray(secret, Direction.RIGHT, BITS_4)
-    stega = cover_lsb_reset.copy()
+    secret_msb = shift_image_bits_asarray(secret_asarray, Direction.RIGHT, BITS_4)
+    stega_asarray = cover_lsb_reset.copy()
     if secret_msb.size < cover_lsb_reset.size:
         height, width, _ = secret_msb.shape
-        stega[:height, :width] += secret_msb
+        stega_asarray[:height, :width] += secret_msb
     else:
-        stega += secret_msb
-    return Image.fromarray(stega)
+        stega_asarray += secret_msb
+    return Image.fromarray(stega_asarray)
