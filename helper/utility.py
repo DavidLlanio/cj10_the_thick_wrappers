@@ -2,7 +2,6 @@ import re
 from typing import Any, TypeVar
 
 import numpy as np
-from PIL import Image
 
 T = TypeVar("T", int, np.signedinteger[Any])
 NON_ASCII_PATTERN = re.compile("r[^\x00-\x7f]+")
@@ -21,10 +20,11 @@ def pixels_to_binary(img) -> list:
             r, g, b = str(bin(r))[2:].zfill(8), str(bin(g))[2:].zfill(8), str(bin(b))[2:].zfill(8)
             pixellist.append((r, g, b))
     return pixellist
-# print(TESTpixels_to_binary("/Users/maxencegilloteaux/Downloads/output(1).png"))
+
 
 def clear_least_significant_bits(bits: T, n: int) -> T:
-    """Replaces an intger's `n` least significant bits with zeroes
+    """
+    Replaces an intger's `n` least significant bits with zeroes.
 
     param bits: An int, including an array of a NumPy int type
     param n: Number of bits to clear
@@ -50,7 +50,7 @@ def strip_non_ascii(text: str) -> str:
 
 def to_bytes(text: str) -> list[int]:
     """
-    Converts a string to ASCII code.
+    Converts a string to a list of its characters' ASCII codes.
 
     param text: String to convert.
     """

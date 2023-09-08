@@ -1,8 +1,20 @@
+from PIL.Image import Image
+
 from .utility import pixels_to_binary
 
 
-def decrypt_text_from_image(img) -> tuple:
-    """Iterates and checks every binary RGB triplet, scanning over the LSB"""
+def decrypt_text_from_image(img: Image) -> tuple[str, bool]:
+    """
+    Decrypts a message encoded in an image.
+
+    param img: A Pillow Image object containing the message to decrypt
+    This function iterates over an image's pixels and extracts the three least
+    significant bits of each color plane. These values are summed and converted
+    to the corresponding ASCII character. The function scans until it finds
+    the message delimiter ",,,.." or it processes all pixels. It returns
+    a tuple of the decrypted message and a bool indicating whether the
+    delimiter (present in all valid messages) was found.
+    """
     delimiter = False
     pixel_list, word_total = [], ""
     RGB_binary_list = pixels_to_binary(img)
