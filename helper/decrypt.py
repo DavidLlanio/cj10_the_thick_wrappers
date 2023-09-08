@@ -1,4 +1,5 @@
-from utility import pixels_to_binary
+from .utility import pixels_to_binary
+
 
 def decrypt_text_from_image(img) -> tuple:
     """Iterates and checks every binary RGB triplet, scanning over the LSB"""

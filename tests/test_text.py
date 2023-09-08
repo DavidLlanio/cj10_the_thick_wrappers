@@ -1,21 +1,23 @@
 import string
+from glob import glob
 from os.path import join
 from random import choices
 
 from PIL import Image
 
-from helper import encrypt, utility
+from helper import decrypt, encrypt, utility
 
 ascii = string.ascii_letters + string.digits + string.punctuation
 non_ascii = "".join(map(chr, range(128, 1000)))
 combined = ascii + non_ascii
 end_length = len(encrypt.END_TEXT)
 
-images = ("cover_image.png", "output.png", "pydis_logo.png")
+img_dir = "static"
+images = glob(join(img_dir, "*.png"))
 
 
-def pixel_count(image):
-    """Get the nmber of pixels in an image"""
+def pixel_count(image: Image.Image):
+    """Get the number of pixels in an image"""
     return image.size[0] * image.size[1]
 
 
@@ -41,7 +43,7 @@ def decrypt_text(image: Image.Image) -> str | None:
     ):
         value = 0
         # Recover ASCII code
-        for i, plane in enumerate(image.getpixel(pixel)):
+        for i, plane in enumerate(image.getpixel(pixel)[:3]):
             plane %= modulus
             # Shift bits back to original place - this ensures zero bits aren't lost
             # as leading zeroes
@@ -68,11 +70,11 @@ def encrypt_decrypt(message: str, image: Image.Image) -> None:
     """Confirm that a message can be encrypted in an image and recovered"""
     encryption = encrypt.encrypt_text_to_image(message, image)
     assert encryption
-    decrypt = decrypt_text(encryption)
-    assert utility.strip_non_ascii(message.strip()) == decrypt
+    decrypted, _ = decrypt.decrypt_text_from_image(encryption)
+    assert utility.strip_non_ascii(message.strip()) == decrypted
 
 
-def too_long(image):
+def too_long(image: Image.Image):
     """Should return `None` if message too long to encrypt"""
     extent = pixel_count(image)
     message = "a" * (extent + 1)
@@ -89,10 +91,11 @@ def verify(alphabet: str, length: int, image: Image.Image) -> None:
 def test_messages() -> None:
     """Checks encrypting-decrypting for messages of various lengths"""
     for file in images:
-        image = Image.open(join("static", file))
+        # No RGBA!
+        image = Image.open(file).convert("RGB")
+        print(file)
         for length in (0, 1, 5, 10, 100, 1000, 5000, pixel_count(image) - end_length):
             extent = image.size[0] * image.size[1]
-            print(length)
             too_long(image)
             if length <= extent:
                 verify(ascii, length, image)
