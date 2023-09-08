@@ -50,9 +50,9 @@ class TailwindStyling():
     """Class that contains all the curated styling chosen for GUI components"""
 
     # Layout styling
-    header_row = "flex items-center justify-center"
+    header_row = "flex items-center justify-center relative px-4"
     center_card = "absolute top-1/2 left-1/2 transform -translate-x-1/2 \
-    -translate-y-1/2 bg-white p-8 rounded-lg shadow-md max-w-md"
+    -translate-y-1/2 p-8 rounded-lg shadow-md max-w-md"
     button_row = "flex"
 
     # Text styling
@@ -62,6 +62,7 @@ class TailwindStyling():
 
     # Input element styling
     button_center = "mx-auto"
+    dark_mode_switch = "absolute right-4"
 
 
 # GUI callback functions
@@ -277,11 +278,15 @@ styles = TailwindStyling()
 
 # Add static files folder
 app.add_static_files("/static", "static")
+# Add dark mode config
+dark_mode = ui.dark_mode()
 
 # Title of the project
 with ui.header(elevated=False) as h:
     h.tailwind(styles.header_row)
-    title = ui.label("In Plain Pixel").tailwind(styles.title_text)
+    ui.label("In Plain Pixel").tailwind(styles.title_text)
+    dark_mode_button = ui.checkbox("Dark Mode").bind_value_to(dark_mode, "value")
+    dark_mode_button.tailwind(styles.dark_mode_switch)
 
 # Prompt user to choose whether to encrypt or decrypt
 with ui.row():
