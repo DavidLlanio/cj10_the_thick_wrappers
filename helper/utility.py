@@ -8,7 +8,7 @@ T = TypeVar("T", int, np.signedinteger[Any])
 NON_ASCII_PATTERN = re.compile("r[^\x00-\x7f]+")
 
 
-def get_pixels_from_image(img: Image.Image) -> list[tuple[str]]:
+def pixels_to_binary(img) -> list:
     """Translates an inputted image's pixels to binary"""
     pixels = img.load()
     width, height = img.size
@@ -18,14 +18,10 @@ def get_pixels_from_image(img: Image.Image) -> list[tuple[str]]:
     for y in range(height):
         for x in range(width):
             r, g, b = pixels[x, y]
-            r, g, b = (
-                str(bin(r))[2:].zfill(8),
-                str(bin(g))[2:].zfill(8),
-                str(bin(b))[2:].zfill(8),
-            )
+            r, g, b = str(bin(r))[2:].zfill(8), str(bin(g))[2:].zfill(8), str(bin(b))[2:].zfill(8)
             pixellist.append((r, g, b))
     return pixellist
-
+# print(TESTpixels_to_binary("/Users/maxencegilloteaux/Downloads/output(1).png"))
 
 def clear_least_significant_bits(bits: T, n: int) -> T:
     """Replaces an intger's `n` least significant bits with zeroes

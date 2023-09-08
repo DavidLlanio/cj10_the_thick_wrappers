@@ -1,11 +1,10 @@
-from .utility import get_pixels_from_image
-import numpy as np
+from utility import pixels_to_binary
 
 def decrypt_text_from_image(img) -> tuple:
     """Iterates and checks every binary RGB triplet, scanning over the LSB"""
     delimiter = False
     pixel_list, word_total = [], ""
-    RGB_binary_list = get_pixels_from_image(img)
+    RGB_binary_list = pixels_to_binary(img)
 
     # Iterates through each pixel's binary values and concatenates the least significant bits into decoded code
     for pixel in RGB_binary_list:
