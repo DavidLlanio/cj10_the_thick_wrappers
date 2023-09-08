@@ -6,8 +6,9 @@ from nicegui import app, events, ui
 from PIL import Image
 
 from helper.decrypt import decrypt_image_from_image, decrypt_text_from_image
+from helper import exif_embed_ipp
+from helper.encrypt import encrypt_image_to_image
 from helper.encrypt_text import encrypt_text
-from helper.Steganographizer import Steganographizer
 
 InvalidFileError = (OSError, Image.UnidentifiedImageError)
 
@@ -173,14 +174,16 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
                     ui.button("Continue", on_click=dialog.close)
             dialog.open()
         # Call function to encrypt user image into cover image
-        output_image = Steganographizer.encrypt_image(cimg, uimg)
+        user_image_exif_data = uimg.getexif()
+        new_exif_data = exif_embed_ipp(user_image_exif_data, uimg.size)
+        output_image = encrypt_image_to_image(cimg, uimg)
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
             os.remove(image_output_fp)
         elif os.path.exists(text_output_fp):
             os.remove(text_output_fp)
         # Save the output image
-        output_image.save(encrypt_output_image_fp)
+        output_image.save(encrypt_output_image_fp, exif=new_exif_data)
     elif value == "Text":
         # Check if there is text input, possibly from user-provided file
         if not text_input:
