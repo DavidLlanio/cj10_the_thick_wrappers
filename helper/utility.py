@@ -31,9 +31,9 @@ def shift_image_bits_asarray(image_array: np.ndarray, direction: Direction, bit_
             return np.right_shift(image_array, bit_amount)
 
 
-def exif_embed_apl(image_exif: Exif, data: tuple[int, int]) -> Exif:
+def exif_embed_ipp(image_exif: Exif, data: tuple[int, int]) -> Exif:
     """
-    Implement A Pixel Life metadata
+    Implement In Plain Pixel metadata
     :param image_exif: Image metadata
     :param data: New metadata to embed
     :return: Updated image metadata
