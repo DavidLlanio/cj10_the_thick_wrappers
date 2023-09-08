@@ -2,8 +2,8 @@ import numpy as np
 from PIL import Image
 from PIL.Image import Exif
 
-from helper import EXIF_MAKE, ExifData, ResizeMode, Sizing, \
-    STARTING_X, STARTING_Y, TEAM_MEMBERS, DESCRIPTION, Direction, SOFTWARE_TITLE
+from helper import Direction, ExifData, EXIF_MAKE, TEAM_MEMBERS, SOFTWARE_TITLE, DESCRIPTION, ResizeMode, Sizing, \
+    STARTING_X, STARTING_Y
 
 
 def get_pixels_from_image():
@@ -16,20 +16,19 @@ def clear_least_significant_bits(bits):
     pass
 
 
-def shift_image_bits_asarray(image: Image.Image, direction: Direction, bit_amount: int) -> np.asarray:
+def shift_image_bits_asarray(image_array: np.ndarray, direction: Direction, bit_amount: int) -> np.asarray:
     """
     Convert image to numpy array and perform bitwise operation
-    :param image: Image object
+    :param image_array: Image numpy array value
     :param direction: Left bit shit or Right bit shift
     :param bit_amount: Amount of bits to shift
     :return: Image data as array
     """
-    image_asarray = np.asarray(image)
     match direction:
         case Direction.LEFT:
-            return np.left_shift(image_asarray, bit_amount)
+            return np.left_shift(image_array, bit_amount)
         case Direction.RIGHT:
-            return np.right_shift(image_asarray, bit_amount)
+            return np.right_shift(image_array, bit_amount)
 
 
 def exif_embed_apl(image_exif: Exif, data: tuple[int, int]) -> Exif:
@@ -54,7 +53,7 @@ def exif_model_builder(size: tuple[int, int]) -> str:
     :return: Encrypted message
     """
     width, height = size
-    return f"A{width}P{height}L"
+    return f"I{width}P{height}P"
 
 
 def image_resize(image: Image.Image, max_dimension: tuple[int, int], resize_mode=ResizeMode.DEFAULT) -> Image.Image:
