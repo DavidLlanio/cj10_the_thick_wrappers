@@ -1,5 +1,6 @@
 from PIL.Image import Image
 
+from .constant import BITS_4, N_PLANES
 from .utility import parse_exif, pixels_to_binary
 
 
@@ -22,8 +23,8 @@ def decrypt_text_from_image(img: Image) -> tuple[str, bool]:
     # Iterates through each pixel's binary values and concatenates the least significant bits into decoded code
     for pixel in RGB_binary_list:
         output = "0"
-        r, g, b = pixel[0][-3:], pixel[1][-3:], pixel[2][-1]
-        output = output + (str(b) + str(g) + str(r))
+        r, g, b = pixel[0][-N_PLANES:], pixel[1][-N_PLANES:], pixel[2][-1]
+        output += f"{b}{g}{r}"
         pixel_list.append(int(output, 2))
 
     # Iterates through each binary output and converts each binary to ASCII, simultaneously checking for the delimiter
@@ -41,6 +42,6 @@ def decrypt_image_from_image(image: Image) -> Image:
         width, height = size
         image = image.crop((0, 0, width, height))
     else:
-        print("WARNING: Could not parse size from EXIF metadata, falling back to decrypting whole image")
+        print("WARNING: Could not parse size from EXIF metadata. Falling back to decrypting whole image")
 
-    return image.point(lambda byte: (byte & 0b00001111) << 4)
+    return image.point(lambda byte: (byte & 0b00001111) << BITS_4)

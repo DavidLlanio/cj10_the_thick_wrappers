@@ -7,6 +7,8 @@ EXIF_MAKE = "IPP"
 STARTING_X = 0
 STARTING_Y = 0
 BITS_4 = 4
+# R, G, B
+N_PLANES = 3
 
 
 class ResizeMode(Enum):
