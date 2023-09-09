@@ -144,7 +144,7 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
     rgb_image.save(fp, format="PNG")
 
 
-def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | None = None):
+def encrypt_event(e: events.ClickEventArguments, value: str, upload: str, text_input: str | None = None):
     """Function that checks if conditions for encryption are met and calls encrypt fucntion
 
     This function will check whether text or image is being encrypted into the cover_image.
@@ -202,7 +202,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
         output_image.save(encrypt_output_image_fp, exif=new_exif_data)
     elif value == "Text":
         # Check if there is text input, possibly from user-provided file
-        if not text_input:
+        if upload == "Read Text from File":
             try:
                 with open(file_paths.get_user_text_fp()) as f:
                     text_input = f.read()
@@ -331,6 +331,7 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
                                             on_click=lambda e:
                                             encrypt_event(e,
                                                           dropdown_text_or_image.value,
+                                                          enter_text_or_upload.value,
                                                           (text_to_encrypt if
                                                            isinstance(text_to_encrypt, str)
                                                            else text_to_encrypt.value)))
@@ -350,7 +351,7 @@ with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value=
         with ui.row() as ei:
             ei.tailwind(styles.button_row)
             encrypt_image_button = ui.button("Encrypt", on_click=lambda e:
-                                             encrypt_event(e, dropdown_text_or_image.value))
+                                             encrypt_event(e, dropdown_text_or_image.value, None))
             encrypt_image_button.tailwind(styles.button_center)
 
 # Card with user input needed for decrypt with decrypt button
