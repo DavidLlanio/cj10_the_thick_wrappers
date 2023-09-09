@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from PIL.Image import Exif
 
-from helper import (
+from .constant import (
     DESCRIPTION, EXIF_MAKE, SOFTWARE_TITLE, STARTING_X, STARTING_Y,
     TEAM_MEMBERS, Direction, ExifData, ResizeMode, Sizing
 )
