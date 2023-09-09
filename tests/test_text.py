@@ -6,7 +6,7 @@ from PIL import Image
 from helper import decrypt, encrypt, utility
 
 seed(a=1)
-ascii = string.ascii_letters + string.digits + string.punctuation
+ascii = string.ascii_letters + string.digits + string.punctuation + "\n\t\r"
 non_ascii = "".join(map(chr, range(128, 1000)))
 combined = ascii + non_ascii
 end_length = len(encrypt.END_TEXT)
