@@ -1,7 +1,8 @@
 from PIL.Image import Image
+from utility import parse_exif
+
 from .utility import pixels_to_binary
 
-from .utility import get_pixels_from_image, parse_exif
 
 def decrypt_text_from_image(img: Image) -> tuple[str, bool]:
     """

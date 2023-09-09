@@ -1,6 +1,6 @@
 
 import re
-from typing import Any, TypeVar, Optional
+from typing import Any, Optional, TypeVar
 
 import numpy as np
 from PIL import Image
@@ -14,6 +14,7 @@ from helper import (
 T = TypeVar("T", int, np.signedinteger[Any])
 
 EXIF_MODEL_PATTERN = re.compile(r"I(?P<width>\d*)P(?P<height>\d*)P")
+
 
 def pixels_to_binary(img) -> list:
     """Translates an inputted image's pixels to binary"""
