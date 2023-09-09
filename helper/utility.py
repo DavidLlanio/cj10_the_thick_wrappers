@@ -9,6 +9,7 @@ from helper import (
     DESCRIPTION, EXIF_MAKE, SOFTWARE_TITLE, STARTING_X, STARTING_Y,
     TEAM_MEMBERS, Direction, ExifData, ResizeMode, Sizing
 )
+from helper.constant import N_PLANES
 
 T = TypeVar("T", int, np.signedinteger[Any])
 
@@ -24,7 +25,7 @@ def pixels_to_binary(img) -> list:
     # Iterates through all of the picture's pixels, left to right then down
     for y in range(height):
         for x in range(width):
-            r, g, b = pixels[x, y]
+            r, g, b = pixels[x, y][:N_PLANES]
             r, g, b = str(bin(r))[2:].zfill(8), str(bin(g))[2:].zfill(8), str(bin(b))[2:].zfill(8)
             pixellist.append((r, g, b))
     return pixellist

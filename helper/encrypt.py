@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 
 from helper import utility
-from helper.constant import BITS_4, Direction
+from helper.constant import BITS_4, N_PLANES, Direction
 
 # Added as message end
 END_TEXT = ",,,.."
@@ -31,6 +31,7 @@ def encrypt_text_to_image(text: str, image: Image.Image) -> Image.Image | None:
     # Convert to ASCII and add padding indicating message end
     bytes = utility.to_bytes(utility.strip_non_ascii(text.strip())) + END_BYTES
     n = len(bytes)
+    # RGB only
     cols, rows = image.size
     extent = cols * rows
     # Alert caller if too many bytes to encode
@@ -45,27 +46,27 @@ def encrypt_text_to_image(text: str, image: Image.Image) -> Image.Image | None:
         (bytes, np.zeros(extent - n, dtype=np.uint8)), dtype=np.uint8
     ).reshape((rows, cols))
 
-    modulus = 2**3
+    modulus = 2 ** N_PLANES
     # Needed to identify which pixels need LSBs cleared
     full_rows = n // cols
     last_row_cols = n % cols
 
     # First clear all rows where all pixels are used
-    pixels[:full_rows, :, :] = utility.clear_least_significant_bits(
-        pixels[:full_rows, :, :], 3
+    pixels[:full_rows, :, :N_PLANES] = utility.clear_least_significant_bits(
+        pixels[:full_rows, :, :N_PLANES], N_PLANES
     )
     # And last, partially filled row, if it exists
     if full_rows < rows and last_row_cols > 0:
-        pixels[full_rows, :last_row_cols, :] = utility.clear_least_significant_bits(
-            pixels[full_rows, :last_row_cols, :], 3
+        pixels[full_rows, :last_row_cols, :N_PLANES] = utility.clear_least_significant_bits(
+            pixels[full_rows, :last_row_cols, :N_PLANES], N_PLANES
         )
     # Add array to each channel to encode bits
     # Red
     pixels[:, :, 0] += mask % modulus
-    mask >>= 3
+    mask >>= N_PLANES
     # Green
     pixels[:, :, 1] += mask % modulus
-    mask >>= 3
+    mask >>= N_PLANES
     # Blue
     pixels[:, :, 2] += mask
     return Image.fromarray(pixels)

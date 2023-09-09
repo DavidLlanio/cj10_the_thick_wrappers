@@ -92,7 +92,7 @@ def test_messages() -> None:
     """Checks encrypting-decrypting for messages of various lengths"""
     for file in images:
         # No RGBA!
-        image = Image.open(file).convert("RGB")
+        image = Image.open(file)
         print(file)
         for length in (0, 1, 5, 10, 100, 1000, 5000, pixel_count(image) - end_length):
             extent = image.size[0] * image.size[1]
