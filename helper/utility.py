@@ -1,11 +1,14 @@
 import re
+from typing import Any, TypeVar
+
 import numpy as np
 from PIL import Image
 from PIL.Image import Exif
-from typing import Any, TypeVar
 
-from helper import Direction, ExifData, EXIF_MAKE, TEAM_MEMBERS, SOFTWARE_TITLE, DESCRIPTION, ResizeMode, Sizing, \
-    STARTING_X, STARTING_Y
+from helper import (
+    DESCRIPTION, EXIF_MAKE, SOFTWARE_TITLE, STARTING_X, STARTING_Y,
+    TEAM_MEMBERS, Direction, ExifData, ResizeMode, Sizing
+)
 
 T = TypeVar("T", int, np.signedinteger[Any])
 NON_ASCII_PATTERN = re.compile("r[^\x00-\x7f]+")
@@ -40,6 +43,7 @@ def clear_least_significant_bits(bits: T, n: int) -> T:
 def shift_image_bits_asarray(image_array: np.ndarray, direction: Direction, bit_amount: int) -> np.asarray:
     """
     Convert image to numpy array and perform bitwise operation
+
     :param image_array: Image numpy array value
     :param direction: Left bit shit or Right bit shift
     :param bit_amount: Amount of bits to shift
@@ -55,6 +59,7 @@ def shift_image_bits_asarray(image_array: np.ndarray, direction: Direction, bit_
 def exif_embed_ipp(image_exif: Exif, data: tuple[int, int]) -> Exif:
     """
     Implement In Plain Pixel metadata
+
     :param image_exif: Image metadata
     :param data: New metadata to embed
     :return: Updated image metadata
@@ -70,6 +75,7 @@ def exif_embed_ipp(image_exif: Exif, data: tuple[int, int]) -> Exif:
 def exif_model_builder(size: tuple[int, int]) -> str:
     """
     Build a secret code for decryption function to analyze
+
     :param size: Secret image dimensions
     :return: Encrypted message
     """
@@ -122,6 +128,7 @@ def image_resize(image: Image.Image, max_dimension: tuple[int, int], resize_mode
 def image_size_compare(image_width: int, image_height: int, max_width: int, max_height) -> Sizing:
     """
     Determine whether image is smaller, bigger, taller or wider than maximum dimension
+
     :param image_width:
     :param image_height:
     :param max_width:
@@ -135,11 +142,6 @@ def image_size_compare(image_width: int, image_height: int, max_width: int, max_
     if (image_width > max_width) and (image_height < max_height):
         return Sizing.WIDER
     return Sizing.SMALLER
-
-
-def set_least_significant_bits(bits, content):
-    """Function that will set the given least significant bits to content"""
-    pass
 
 
 def strip_non_ascii(text: str) -> str:
