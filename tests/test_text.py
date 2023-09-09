@@ -1,60 +1,23 @@
 import string
-from glob import glob
-from os.path import join
-from random import choices
+from random import choices, seed
 
 from PIL import Image
 
 from helper import decrypt, encrypt, utility
 
+seed(a=1)
 ascii = string.ascii_letters + string.digits + string.punctuation
 non_ascii = "".join(map(chr, range(128, 1000)))
 combined = ascii + non_ascii
 end_length = len(encrypt.END_TEXT)
 
 img_dir = "static"
-images = glob(join(img_dir, "*.png"))
+# images = utility.list_images(img_dir)
 
 
 def pixel_count(image: Image.Image):
     """Get the number of pixels in an image"""
     return image.size[0] * image.size[1]
-
-
-def decrypt_text(image: Image.Image) -> str | None:
-    """Decrypt text encoded in an image
-
-    If the message end is not found, `None`  is returned.
-    """
-    cols = image.size[0]
-    end_length = len(encrypt.END_TEXT)
-    # For last 3 bits
-    modulus = 8
-    decrypt = []
-    endpoint = -end_length
-    sequence = list(encrypt.END_TEXT)
-
-    for pixel in (
-        (
-            n % cols,
-            n // cols,
-        )
-        for n in range(image.size[0] * image.size[1])
-    ):
-        value = 0
-        # Recover ASCII code
-        for i, plane in enumerate(image.getpixel(pixel)[:3]):
-            plane %= modulus
-            # Shift bits back to original place - this ensures zero bits aren't lost
-            # as leading zeroes
-            plane <<= 3 * i
-            value += plane
-        decrypt.append(chr(value))
-        # First character of message padding
-        if decrypt[endpoint:] == sequence:
-            return "".join(decrypt)[:endpoint]
-    else:
-        return None
 
 
 def random_message(alphabet, length: int) -> str:
@@ -88,12 +51,11 @@ def verify(alphabet: str, length: int, image: Image.Image) -> None:
     encrypt_decrypt(message, image)
 
 
-def test_messages() -> None:
+def test_messages(all_images) -> None:
     """Checks encrypting-decrypting for messages of various lengths"""
-    for file in images:
+    for file in all_images:
         # No RGBA!
         image = Image.open(file)
-        print(file)
         for length in (0, 1, 5, 10, 100, 1000, 5000, pixel_count(image) - end_length):
             extent = image.size[0] * image.size[1]
             too_long(image)
