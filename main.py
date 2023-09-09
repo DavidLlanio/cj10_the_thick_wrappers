@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from nicegui import app, events, ui
 from PIL import Image, UnidentifiedImageError
 
+from helper import ResizeMode, exif_embed_ipp, image_resize
 from helper.decrypt import decrypt_image_from_image, decrypt_text_from_image
-from helper import exif_embed_ipp, ResizeMode, image_resize
-from helper.encrypt import encrypt_image_to_image
-from helper.encrypt_text import encrypt_text
+from helper.encrypt import encrypt_image_to_image, encrypt_text_to_image
 
 InvalidFileError = (OSError, UnidentifiedImageError)
 
@@ -215,7 +214,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
                 return
 
         # Call function to encrypt text into cover image
-        output_image = encrypt_text(text_input, cimg)
+        output_image = encrypt_text_to_image(text_input, cimg)
         # Check return value in case text is too long
         if output_image is None:
             ui.notify("Text message is too long for image!")
