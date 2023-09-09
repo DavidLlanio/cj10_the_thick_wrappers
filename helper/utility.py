@@ -1,4 +1,6 @@
-from typing import Any, TypeVar
+
+import re
+from typing import Any, TypeVar, Optional
 
 import numpy as np
 from PIL import Image
@@ -11,6 +13,7 @@ from helper import (
 
 T = TypeVar("T", int, np.signedinteger[Any])
 
+EXIF_MODEL_PATTERN = re.compile(r"I(?P<width>\d*)P(?P<height>\d*)P")
 
 def pixels_to_binary(img) -> list:
     """Translates an inputted image's pixels to binary"""
@@ -79,6 +82,27 @@ def exif_model_builder(size: tuple[int, int]) -> str:
     """
     width, height = size
     return f"I{width}P{height}P"
+
+
+def parse_exif(image_exif: Exif) -> Optional[tuple[int, int]]:
+    """
+    Return the original size of the hidden image as a (width, height) tuple, if possible
+
+    :param image_exif: Image metadata
+    :return: a tuple containing the width and height of the original hidden image, or `None` if not possible
+    """
+    model_value: Optional[str] = image_exif.get(ExifData.MODEL.value)
+    if model_value is None:
+        return None
+
+    match = EXIF_MODEL_PATTERN.search(model_value)
+    if match is None:
+        return None
+
+    width = int(match.group("width"))
+    height = int(match.group("height"))
+
+    return (width, height)
 
 
 def image_resize(image: Image.Image, max_dimension: tuple[int, int], resize_mode=ResizeMode.DEFAULT) -> Image.Image:
