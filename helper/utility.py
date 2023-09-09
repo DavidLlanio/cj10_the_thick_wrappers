@@ -1,4 +1,3 @@
-import re
 from typing import Any, TypeVar
 
 import numpy as np
@@ -11,7 +10,6 @@ from helper import (
 )
 
 T = TypeVar("T", int, np.signedinteger[Any])
-NON_ASCII_PATTERN = re.compile("r[^\x00-\x7f]+")
 
 
 def pixels_to_binary(img) -> list:
