@@ -7,7 +7,7 @@ from nicegui import app, events, ui
 from nicegui.events import UploadEventArguments, ClickEventArguments
 from PIL import Image, UnidentifiedImageError
 
-from helper import ResizeMode, exif_embed_ipp, image_resize, SOFTWARE_TITLE, FileType
+from helper import ResizeMode, exif_embed_ipp, image_resize, SOFTWARE_TITLE, FileType, image_size_compare, Sizing
 from helper.decrypt import decrypt_image_from_image, decrypt_text_from_image
 from helper.encrypt import encrypt_image_to_image, encrypt_text_to_image
 
@@ -207,7 +207,7 @@ def handle_upload(file: UploadEventArguments, file_type: FileType, file_name: st
                 ui.notify("Could not load image!")
 
 
-def encrypt_event(e: ClickEventArguments, file_type: FileType, upload: str, text_input: str | None = None):
+async def encrypt_event(e: ClickEventArguments, file_type: FileType, upload: str, text_input: str | None = None):
     """Function that checks if conditions for encryption are met and calls encrypt fucntion
 
     This function will check whether text or image is being encrypted into the cover_image.
@@ -221,6 +221,7 @@ def encrypt_event(e: ClickEventArguments, file_type: FileType, upload: str, text
     param value: String with type of message will be encrypted. Will be "Text" or "Image".
     param text_input: Message to be encrypted into image
     """
+
     # File paths for all images
     # user_image_fp = file_paths.get_user_image_fp()
     # cover_image_fp = file_paths.get_cover_image_fp()
@@ -293,34 +294,38 @@ def encrypt_event(e: ClickEventArguments, file_type: FileType, upload: str, text
     #     # Save the output image
     #     output_image.save(encrypt_output_image_fp)
     # show_output()
+
     try:
         cover = [file for file in os.listdir(".static") if "cover" in file][0]
         with Image.open(file_find(cover)) as cimg:
             cimg.load()
     except InvalidFileError:
         ui.notify("Cover image file cannot be read!")
-        # Check if user image is larger than cover image, resize if it is
     if file_type.IMAGE:
-        # Open user image
         try:
             secret = [file for file in os.listdir(".static") if "secret" in file][0]
             with Image.open(file_find(secret)) as uimg:
-                uimg.load()  # Check sizes
-                if uimg.size[0] > cimg.size[0] or uimg.size[1] > cimg.size[1]:
-                    with ui.dialog() as dialog, ui.card():
-                        ui.label("The image you want to encrypt is larger than the cover \
-                                 image in one or both dimensions. It will be resized.")
+                uimg.load()
+                w_cimg, h_cimg = cimg.size
+                w_uimg, h_uimg = uimg.size
+                size_mode = image_size_compare(w_uimg, h_uimg, w_cimg, h_cimg)
+                if size_mode != Sizing.SMALLER:
+                    with ui.dialog() as resize_dialog, ui.card():
+                        ui.label("Secret image exceeds cover image ratio and will be cropped.\n"
+                                 "Do you want to shrink the image to scale?")
                         with ui.row():
-                            ui.button("Continue", on_click=dialog.close)
-                # Call function to encrypt user image into cover image
-                resized_uimg = image_resize(uimg, cimg.size, ResizeMode.SHRINK_TO_SCALE)
+                            ui.button("Yes", on_click=lambda: resize_dialog.submit(ResizeMode.SHRINK_TO_SCALE))
+                            ui.button("No", on_click=lambda: resize_dialog.submit(ResizeMode.DEFAULT))
+
+                resize_mode = await resize_dialog
+                resized_uimg = image_resize(uimg, cimg.size, resize_mode)
                 user_image_exif_data = resized_uimg.getexif()
                 new_exif_data = exif_embed_ipp(user_image_exif_data, resized_uimg.size)
                 output_image = encrypt_image_to_image(cimg, resized_uimg)
                 output = Filepath("output", cimg.format.lower())
                 output_image.save(output.get_filepath_full(), exif=new_exif_data)
                 ui.notify("Image encryption complete!")
-                dialog.open()
+
         except InvalidFileError:
             ui.notify("Encryption image file cannot be read!")
 
@@ -393,6 +398,45 @@ def encrypt_event(e: ClickEventArguments, file_type: FileType, upload: str, text
 #         # Save output as an image
 #         decrypt_image_from_image(cimg).save(image_output_fp)
 #     show_output()
+def decrypt_event():
+    """Function that does procedures for decryption
+
+    Loads up the cover_image gotten from the user
+    and calls the decrypt functions. If the text function detects text
+    a text file with the decrypted message will be saved as a text file.
+    Otherwise, the decrypted image will be saved.
+    """
+    # File path of cover image
+    # cover_image_fp = file_paths.get_cover_image_fp()
+    # text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
+    # image_output_fp = file_paths.get_decrypted_output_file_path()
+    # Open the cover image
+    try:
+        cover = [file for file in os.listdir(".static") if "cover" in file][0]
+        with Image.open(file_find(cover)) as cimg:
+            cimg.load()
+            # Save output as an image
+            decrypt_image_from_image(cimg).save(file_find(f"decrypted.{cimg.format.lower()}"))
+            ui.notify("Image encryption complete!")
+    except InvalidFileError:
+        ui.notify("Cover image file can't be read!")
+    # Call the function to decrypt text from image
+    # decrypt_text, end_code_found = decrypt_text_from_image(cimg)
+    # # Save output as text file
+    # if end_code_found:
+    #     # Remove output file if it exists
+    #     if os.path.exists(image_output_fp):
+    #         os.remove(image_output_fp)
+    #     # Create new output file
+    #     with open(text_output_fp, "w") as f:
+    #         f.write(decrypt_text)
+    # else:
+    #     # Remove output file if it exists
+    #     if os.path.exists(text_output_fp):
+    #         os.remove(text_output_fp)
+    # Call the function to decrypt an image from an image
+
+    # show_output()
 
 
 def main():
@@ -501,12 +545,12 @@ def main():
                 with ui.column():
                     ui.label("Enter Image to Decrypt:").tailwind(styles.prompt_text_v)
                     ui.upload(auto_upload=True,
-                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, Filepath("cover.jpg")),
+                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover.jpg"),
                               max_files=1, on_rejected=ui.notify("Image file rejected")).props(
                         'accept="image/jpg, image/jpeg, image/png"')
             with ui.row() as di:
                 di.tailwind(styles.button_row)
-                decrypt_image_button = ui.button("Decrypt", )
+                decrypt_image_button = ui.button("Decrypt", on_click=decrypt_event)
                 decrypt_image_button.tailwind(styles.button_center)
 
     # Initialize and run the GUI
