@@ -1,6 +1,6 @@
 from PIL.Image import Image
 
-from .utility import get_pixels_from_image
+from .utility import get_pixels_from_image, parse_exif
 
 
 def decrypt_text_from_image(img) -> tuple:
@@ -27,4 +27,10 @@ def decrypt_text_from_image(img) -> tuple:
 
 def decrypt_image_from_image(image: Image) -> Image:
     """Decrypt the secret image from the given input image"""
+    if size := parse_exif(image.getexif()):
+        width, height = size
+        image = image.crop((0, 0, width, height))
+    else:
+        print("WARNING: Could not parse size from EXIF metadata, falling back to decrypting whole image")
+
     return image.point(lambda byte: (byte & 0b00001111) << 4)

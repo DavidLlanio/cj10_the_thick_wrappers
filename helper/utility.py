@@ -1,9 +1,16 @@
+import re
+from typing import Optional
+
 import numpy as np
 from PIL import Image
 from PIL.Image import Exif
 
-from helper import Direction, ExifData, EXIF_MAKE, TEAM_MEMBERS, SOFTWARE_TITLE, DESCRIPTION, ResizeMode, Sizing, \
-    STARTING_X, STARTING_Y
+from helper import (
+    DESCRIPTION, EXIF_MAKE, SOFTWARE_TITLE, STARTING_X, STARTING_Y,
+    TEAM_MEMBERS, Direction, ExifData, ResizeMode, Sizing
+)
+
+EXIF_MODEL_PATTERN = re.compile(r"I(?P<width>\d*)P(?P<height>\d*)P")
 
 
 def get_pixels_from_image(img) -> list:
@@ -29,6 +36,7 @@ def clear_least_significant_bits(bits):
 def shift_image_bits_asarray(image_array: np.ndarray, direction: Direction, bit_amount: int) -> np.asarray:
     """
     Convert image to numpy array and perform bitwise operation
+
     :param image_array: Image numpy array value
     :param direction: Left bit shit or Right bit shift
     :param bit_amount: Amount of bits to shift
@@ -44,6 +52,7 @@ def shift_image_bits_asarray(image_array: np.ndarray, direction: Direction, bit_
 def exif_embed_ipp(image_exif: Exif, data: tuple[int, int]) -> Exif:
     """
     Implement In Plain Pixel metadata
+
     :param image_exif: Image metadata
     :param data: New metadata to embed
     :return: Updated image metadata
@@ -59,11 +68,33 @@ def exif_embed_ipp(image_exif: Exif, data: tuple[int, int]) -> Exif:
 def exif_model_builder(size: tuple[int, int]) -> str:
     """
     Build a secret code for decryption function to analyze
+
     :param size: Secret image dimensions
     :return: Encrypted message
     """
     width, height = size
     return f"I{width}P{height}P"
+
+
+def parse_exif(image_exif: Exif) -> Optional[tuple[int, int]]:
+    """
+    Return the original size of the hidden image as a (width, height) tuple, if possible
+
+    :param image_exif: Image metadata
+    :return: a tuple containing the width and height of the original hidden image, or `None` if not possible
+    """
+    model_value: Optional[str] = image_exif[ExifData.MODEL.value]
+    if model_value is None:
+        return None
+
+    match = EXIF_MODEL_PATTERN.search(model_value)
+    if match is None:
+        return None
+
+    width = int(match.group("width"))
+    height = int(match.group("height"))
+
+    return (width, height)
 
 
 def image_resize(image: Image.Image, max_dimension: tuple[int, int], resize_mode=ResizeMode.DEFAULT) -> Image.Image:
@@ -111,6 +142,7 @@ def image_resize(image: Image.Image, max_dimension: tuple[int, int], resize_mode
 def image_size_compare(image_width: int, image_height: int, max_width: int, max_height) -> Sizing:
     """
     Determine whether image is smaller, bigger, taller or wider than maximum dimension
+
     :param image_width:
     :param image_height:
     :param max_width:
