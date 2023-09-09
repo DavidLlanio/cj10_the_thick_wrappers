@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from nicegui import app, events, ui
 from PIL import Image, UnidentifiedImageError
 
+from helper import ResizeMode, exif_embed_ipp, image_resize
 from helper.decrypt import decrypt_image_from_image, decrypt_text_from_image
-from helper import exif_embed_ipp, ResizeMode, image_resize
-from helper.encrypt import encrypt_image_to_image
-from helper.encrypt_text import encrypt_text
+from helper.encrypt import encrypt_image_to_image, encrypt_text_to_image
 
 InvalidFileError = (OSError, UnidentifiedImageError)
 
@@ -45,8 +44,24 @@ class Filepaths:
             return os.path.join("static", f"output.{self.cover_image_fe}")
 
 
-def placeholder_function(*args, **kwargs):  # noqa: D103
-    return [None, None]
+@dataclass
+class TailwindStyling():
+    """Class that contains all the curated styling chosen for GUI components"""
+
+    # Layout styling
+    header_row = "flex items-center justify-center relative px-4"
+    center_card = "absolute top-1/2 left-1/2 transform -translate-x-1/2 \
+    -translate-y-1/2 p-8 rounded-lg shadow-md max-w-md"
+    button_row = "flex"
+
+    # Text styling
+    title_text = "text-2xl font-bold"
+    prompt_text_h = "text-base py-5"
+    prompt_text_v = "text-base"
+
+    # Input element styling
+    button_center = "mx-auto"
+    dark_mode_switch = "absolute right-4"
 
 
 # GUI callback functions
@@ -57,7 +72,7 @@ def show_output():
     # If there is output use that as the content of the markdown
     if os.path.exists(image_output_fp):
         with ui.dialog() as dialog, ui.card():
-            ui.label("Image Output")
+            ui.label("Image Output").tailwind(styles.prompt_text_v)
             ui.markdown(f"![output]({image_output_fp})")
             with ui.row():
                 ui.button("Download", on_click=lambda: ui.download(image_output_fp))
@@ -67,7 +82,7 @@ def show_output():
         with open(text_output_fp, "r") as o:
             text = o.read()
         with ui.dialog() as dialog, ui.card():
-            ui.label("Text Output")
+            ui.label("Text Output").tailwind(styles.prompt_text_v)
             ui.markdown(f"{text}")
             with ui.row():
                 ui.button("Close", on_click=dialog.close)
@@ -129,7 +144,7 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
     rgb_image.save(fp, format="PNG")
 
 
-def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | None = None):
+def encrypt_event(e: events.ClickEventArguments, value: str, upload: str, text_input: str | None = None):
     """Function that checks if conditions for encryption are met and calls encrypt fucntion
 
     This function will check whether text or image is being encrypted into the cover_image.
@@ -187,7 +202,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
         output_image.save(encrypt_output_image_fp, exif=new_exif_data)
     elif value == "Text":
         # Check if there is text input, possibly from user-provided file
-        if not text_input:
+        if upload == "Read Text from File":
             try:
                 with open(file_paths.get_user_text_fp()) as f:
                     text_input = f.read()
@@ -199,7 +214,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, text_input: str | N
                 return
 
         # Call function to encrypt text into cover image
-        output_image = encrypt_text(text_input, cimg)
+        output_image = encrypt_text_to_image(text_input, cimg)
         # Check return value in case text is too long
         if output_image is None:
             ui.notify("Text message is too long for image!")
@@ -260,85 +275,98 @@ def decrypt_event():
 
 # Create Filepaths object to keep track of file paths
 file_paths = Filepaths()
+# Create TailwindStyling object for components styles
+styles = TailwindStyling()
 
 # Add static files folder
 app.add_static_files("/static", "static")
+# Add dark mode config
+dark_mode = ui.dark_mode()
 
 # Title of the project
-ui.label("The Thick Wrappers Steganography Project")
+with ui.header(elevated=False) as h:
+    h.tailwind(styles.header_row)
+    ui.label("In Plain Pixel").tailwind(styles.title_text)
+    dark_mode_button = ui.checkbox("Dark Mode").bind_value_to(dark_mode, "value")
+    dark_mode_button.tailwind(styles.dark_mode_switch)
 
 # Prompt user to choose whether to encrypt or decrypt
-ui.label("Select Encrpyt/Decrypt:")
-dropdown_encrypt_or_decrypt = ui.select(["Encrypt", "Decrypt"], value="Encrypt")
+with ui.row():
+    ui.label("Select Encrpyt/Decrypt:").tailwind(styles.prompt_text_h)
+    dropdown_encrypt_or_decrypt = ui.select(["Encrypt", "Decrypt"], value="Encrypt")
 
 # Card with user input needed for encrypt with encrypt button
-with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Encrypt"):
+with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Encrypt") as ed:
+    ed.tailwind(styles.center_card)
     # Prompt the user to select the message type
     with ui.row():
-        ui.label("Choose message type:")
+        ui.label("Choose message type:").tailwind(styles.prompt_text_h)
         dropdown_text_or_image = ui.select(["Text", "Image"], value="Text")
     # User input needed if text message type is chosen
     with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Text"):
         # Prompt the user for the text they want to encrypt into cover image
         with ui.row():
-            ui.label("Choose message source:")
+            ui.label("Choose message source:").tailwind(styles.prompt_text_h)
             enter_text_or_upload = ui.select(["Enter Text", "Read Text from File"], value="Enter Text")
         with ui.column().bind_visibility_from(enter_text_or_upload, "value", value="Enter Text"):
             with ui.row():
                 with ui.column():
-                    ui.label("Enter Text:")
+                    ui.label("Enter Text:").tailwind(styles.prompt_text_h)
                 with ui.column():
                     text_to_encrypt = ui.textarea(label="Message", placeholder="Hello World")
 
         with ui.column().bind_visibility_from(enter_text_or_upload, "value", value="Read Text from File"):
             with ui.row():
                 with ui.column():
-                    ui.label("Select File:")
-                with ui.column():
+                    ui.label("Select Text File:").tailwind(styles.prompt_text_v)
                     ui.upload(auto_upload=True, on_upload=handle_text_file_upload, max_files=1)
         # Prompt the user for the image they want to encrypt a message into
         with ui.row():
             with ui.column():
-                ui.label("Enter Cover Image:")
-            with ui.column():
+                ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True), max_files=1)
-        with ui.row():
+        with ui.row() as et:
+            et.tailwind(styles.button_row)
             encrypt_text_button = ui.button("Encrypt",
                                             on_click=lambda e:
                                             encrypt_event(e,
                                                           dropdown_text_or_image.value,
+                                                          enter_text_or_upload.value,
                                                           (text_to_encrypt if
                                                            isinstance(text_to_encrypt, str)
                                                            else text_to_encrypt.value)))
+            encrypt_text_button.tailwind(styles.button_center)
     # User input needed if image message type is chosen
     with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Image"):
         # Prompt the user for the image they want to encrypt into cover image
         with ui.row():
             with ui.column():
-                ui.label("Enter Image to Encrypt:")
-            with ui.column():
+                ui.label("Enter Image to Encrypt:").tailwind(styles.prompt_text_v)
                 ui.upload(auto_upload=True, on_upload=handle_image_upload, max_files=1,)
         # Prompt the user for the image they want to encrypt a message into
         with ui.row():
             with ui.column():
-                ui.label("Enter Cover Image:")
-            with ui.column():
+                ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True), max_files=1)
-        with ui.row():
+        with ui.row() as ei:
+            ei.tailwind(styles.button_row)
             encrypt_image_button = ui.button("Encrypt", on_click=lambda e:
-                                             encrypt_event(e, dropdown_text_or_image.value))
+                                             encrypt_event(e, dropdown_text_or_image.value, None))
+            encrypt_image_button.tailwind(styles.button_center)
 
 # Card with user input needed for decrypt with decrypt button
-with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Decrypt"):
+with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Decrypt") as de:
+    de.tailwind(styles.center_card)
     with ui.column():
         # Prompt the user for the image they want to decrypt
         with ui.row():
             with ui.column():
-                ui.label("Enter Image to Decrypt:")
-            with ui.column():
+                ui.label("Enter Image to Decrypt:").tailwind(styles.prompt_text_v)
                 ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True), max_files=1)
-        with ui.row():
-            ui.button("Decrypt", on_click=decrypt_event)
+        with ui.row() as di:
+            di.tailwind(styles.button_row)
+            decrypt_image_button = ui.button("Decrypt", on_click=decrypt_event)
+            decrypt_image_button.tailwind(styles.button_center)
 
 # Initialize and run the GUI
 ui.run()

@@ -10,11 +10,15 @@ BITS_4 = 4
 
 
 class ResizeMode(Enum):
+    """Enumeration for flag to shrink or leave image as is"""
+
     DEFAULT = 0
     SHRINK_TO_SCALE = 1
 
 
 class Sizing(Enum):
+    """Enumeration for flags on difference in secret image and cover image"""
+
     SMALLER = 0
     BIGGER = 1
     TALLER = 2
@@ -22,6 +26,8 @@ class Sizing(Enum):
 
 
 class Direction(Enum):
+    """Enumeration for direction of bit shift"""
+
     LEFT = 0
     RIGHT = 1
     UP = 2
@@ -29,6 +35,8 @@ class Direction(Enum):
 
 
 class ExifData(Enum):
+    """Enumeration for metadata locations"""
+
     MAKE = 271
     MODEL = 272
     ARTIST = 315
