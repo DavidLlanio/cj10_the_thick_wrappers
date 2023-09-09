@@ -34,4 +34,4 @@ build/
 .test_folder
 
 # Image folder
-static/
+.static/

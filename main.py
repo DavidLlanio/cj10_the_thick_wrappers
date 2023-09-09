@@ -22,26 +22,26 @@ class Filepaths:
 
     def get_user_text_fp(self):
         """Get file path for user upload text"""
-        return os.path.join("static", f"user_text.{self.user_text_fe}")
+        return os.path.join(".static", f"user_text.{self.user_text_fe}")
 
     def get_user_image_fp(self):
         """Get file path for user image"""
-        return os.path.join("static", f"user_image.{self.user_image_fe}")
+        return os.path.join(".static", f"user_image.{self.user_image_fe}")
 
     def get_cover_image_fp(self):
         """Get file path for cover image"""
-        return os.path.join("static", f"cover_image.{self.cover_image_fe}")
+        return os.path.join(".static", f"cover_image.{self.cover_image_fe}")
 
     def get_encrypted_image_output_path(self):
         """Get file path for encrypted output image"""
-        return os.path.join("static", f"output.{self.cover_image_fe}")
+        return os.path.join(".static", f"output.{self.cover_image_fe}")
 
     def get_decrypted_output_file_path(self, text=False):
         """Get file path for decrypted output, either an image or text file"""
         if text:
-            return os.path.join("static", "output.txt")
+            return os.path.join(".static", "output.txt")
         else:
-            return os.path.join("static", f"output.{self.cover_image_fe}")
+            return os.path.join(".static", f"output.{self.cover_image_fe}")
 
 
 @dataclass
@@ -110,7 +110,7 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
     """Handle user image to encrypt.
 
     This function will take the image that was uploaded by the user
-    and put it in the static file folder of the repository as
+    and put it in the .static file folder of the repository as
     user_image.(file extension of original image)
     or
     cover_image.(file extension of original image)
@@ -151,7 +151,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, upload: str, text_i
     If it is an image it will first check if the user_image is smaller or equal
     in size to cover_image. If user_image is too large it will resize it to be the same
     size as the cover_image. Then, the appropriate function will be called to encrypt
-    either the text or image into the cover_image. The output image will be saved in static
+    either the text or image into the cover_image. The output image will be saved in .static
     folder as output_image.(cover image file extension)
 
     param e: GUI objects for click event.
@@ -278,8 +278,8 @@ file_paths = Filepaths()
 # Create TailwindStyling object for components styles
 styles = TailwindStyling()
 
-# Add static files folder
-app.add_static_files("/static", "static")
+# Add .static files folder
+app.add_static_files("/.static", "static")
 # Add dark mode config
 dark_mode = ui.dark_mode()
 

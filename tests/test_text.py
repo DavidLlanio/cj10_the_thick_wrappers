@@ -12,7 +12,7 @@ non_ascii = "".join(map(chr, range(128, 1000)))
 combined = ascii + non_ascii
 end_length = len(encrypt.END_TEXT)
 
-img_dir = "static"
+img_dir = ".static"
 images = glob(join(img_dir, "*.png"))
 
 
