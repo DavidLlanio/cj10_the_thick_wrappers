@@ -12,33 +12,28 @@ combined = ascii + non_ascii
 end_length = len(encrypt.END_TEXT)
 
 img_dir = "static"
-# images = utility.list_images(img_dir)
 
 
-def pixel_count(image: Image.Image):
-    """Get the number of pixels in an image"""
+def pixel_count(image: Image.Image) -> int:
+    """Gets the number of pixels in an image."""
     return image.size[0] * image.size[1]
 
 
 def random_message(alphabet, length: int) -> str:
-    """
-    Generate random characters of a certain length
-
-    param length: Number of characters to select.
-    """
+    """Generates random characters of a certain length."""
     return "".join(choices(alphabet, k=length))
 
 
 def encrypt_decrypt(message: str, image: Image.Image) -> None:
-    """Confirm that a message can be encrypted in an image and recovered"""
+    """Confirms that a message can be encrypted in an image and recovered"""
     encryption = encrypt.encrypt_text_to_image(message, image)
     assert encryption
     decrypted, _ = decrypt.decrypt_text_from_image(encryption)
     assert utility.strip_non_ascii(message.strip()) == decrypted
 
 
-def too_long(image: Image.Image):
-    """Should return `None` if message too long to encrypt"""
+def too_long(image: Image.Image) -> None:
+    """Verifies that encryption fails on an image if the message is too long to encrypt"""
     extent = pixel_count(image)
     message = "a" * (extent + 1)
     result = encrypt.encrypt_text_to_image(message, image)
@@ -46,7 +41,7 @@ def too_long(image: Image.Image):
 
 
 def verify(alphabet: str, length: int, image: Image.Image) -> None:
-    """Generates a random message of a given length and confirm that it encrypts and decrypts correctly."""
+    """Generates and tests a random message of a given length"""
     message = random_message(alphabet, length)
     encrypt_decrypt(message, image)
 
@@ -54,7 +49,6 @@ def verify(alphabet: str, length: int, image: Image.Image) -> None:
 def test_messages(all_images) -> None:
     """Checks encrypting-decrypting for messages of various lengths"""
     for file in all_images:
-        # No RGBA!
         image = Image.open(file)
         for length in (0, 1, 5, 10, 100, 1000, 5000, pixel_count(image) - end_length):
             extent = image.size[0] * image.size[1]
