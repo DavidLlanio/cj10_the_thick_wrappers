@@ -5,9 +5,9 @@ from .utility import parse_exif, pixels_to_binary
 
 def decrypt_text_from_image(img: Image) -> tuple[str, bool]:
     """
-    Decrypts a message encoded in an image.
+    Decrypts an image encoded with text.
 
-    param img: A Pillow Image object containing the message to decrypt
+    param img: A Pillow Image object containing message
     This function iterates over an image's pixels and extracts the three least
     significant bits of each color plane. These values are summed and converted
     to the corresponding ASCII character. The function scans until it finds
