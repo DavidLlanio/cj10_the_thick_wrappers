@@ -83,7 +83,7 @@ def parse_exif(image_exif: Exif) -> Optional[tuple[int, int]]:
     :param image_exif: Image metadata
     :return: a tuple containing the width and height of the original hidden image, or `None` if not possible
     """
-    model_value: Optional[str] = image_exif[ExifData.MODEL.value]
+    model_value: Optional[str] = image_exif.get(ExifData.MODEL.value)
     if model_value is None:
         return None
 
