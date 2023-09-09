@@ -1,8 +1,8 @@
 # In Plain Pixel
-By: The Thick Wrappers
+Created by "The Thick Wrappers" (github: DavidLlanio, maxence-glt, standard-affect, Jaavv, Robin5605) for the Python Discord 2023 CodeJam
 
 ## In Brief
-In Plain Pixel is a Steganogrpahy application built completely with Python. Through this application, you are able to encrypt different types of inputs into an image of your choice, or decrypt an image created through this application by simply inputting your decrypted image.
+In Plain Pixel is a Steganogrpahy application built completely with Python. Through this application, you are able to encrypt a valid input method (see below) into an image of your choice, or decrypt an image created through this application by simply inputting your decrypted image.
 
 The following input types are supported for encryption:
 - Typed Text
@@ -12,7 +12,7 @@ The following input types are supported for encryption:
 ## What is Steganography?
 Imagine you want to pass a note to your friend in a crowded library, but don't want to draw attention to the contents of the note or the note itself. Maybe you hide the message you want to pass in something inconspicuous like in the margins of a book or between the lines of sentences. In essence, you're hiding your message in plain sight.
 
-**Steganography** is similar to this concept, but with digital media, like pictures!
+[Steganography](https://en.wikipedia.org/wiki/Steganography) is similar to this concept, but with digital media, like pictures!
 
 With steganography, you can hide something like a text message in a picture. You can even hide a picture in another picture!
 
@@ -23,7 +23,7 @@ Computers only understand ones and zeros. Let's say a pixel in an RGB digital im
 255 in binary is 11111111
 So the entire pixel is: [11111111, 11111111, 11111111]
 
-Steganography says, you can hide something in the [least significant bits](https://www.analog.com/en/design-center/glossary/lsb.html#:~:text=Least%2Dsignificant%20bit.,is%20the%20furthest%2Dright%20bit.) of this pixel. For example, let's hide the letter "H" in this pixel.
+With steganography, you can hide something in the [least significant bits](https://www.analog.com/en/design-center/glossary/lsb.html#:~:text=Least%2Dsignificant%20bit.,is%20the%20furthest%2Dright%20bit.) of this pixel. For example, let's hide the letter "H" in this pixel.
 
 The [ASCII](https://www.asciitable.com/) code of the letter "H" is: 72 (decimal) or 1001000 (binary)
 
