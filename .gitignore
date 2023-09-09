@@ -29,3 +29,9 @@ build/
 .vscode/
 # MacOS
 .DS_Store
+
+# Custom
+.test_folder
+
+# Image folder
+static/
