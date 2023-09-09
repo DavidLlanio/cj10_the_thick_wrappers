@@ -1,8 +1,8 @@
 import numpy as np
 from PIL import Image
 
-from helper import utility
-from helper.constant import BITS_4, Direction
+from . import utility
+from .constant import BITS_4, Direction
 
 # Added as message end
 END_TEXT = ",,,.."
