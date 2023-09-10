@@ -15,36 +15,6 @@ from helper.encrypt import encrypt_image_to_image, encrypt_text_to_image
 InvalidFileError = (OSError, UnidentifiedImageError)
 
 
-# @dataclass
-# class Filepaths:
-#     """Class that has file paths of user image, cover image, and output files"""
-#
-#     user_text_fe = "txt"
-#     user_image_fe = ""
-#     cover_image_fe = ""
-#
-#     def get_user_text_fp(self):
-#         """Get file path for user upload text"""
-#         return os.path.join(".static", f"user_text.{self.user_text_fe}")
-#
-#     def get_user_image_fp(self):
-#         """Get file path for user image"""
-#         return os.path.join(".static", f"user_image.{self.user_image_fe}")
-#
-#     def get_cover_image_fp(self):
-#         """Get file path for cover image"""
-#         return os.path.join(".static", f"cover_image.{self.cover_image_fe}")
-#
-#     def get_encrypted_image_output_path(self):
-#         """Get file path for encrypted output image"""
-#         return os.path.join(".static", f"output.{self.cover_image_fe}")
-#
-#     def get_decrypted_output_file_path(self, text=False):
-#         """Get file path for decrypted output, either an image or text file"""
-#         if text:
-#             return os.path.join(".static", "output.txt")
-#         else:
-#             return os.path.join(".static", f"output.{self.cover_image_fe}")
 @dataclass
 class Filepath:
     file: str
@@ -84,32 +54,6 @@ class TailwindStyling:
     dark_mode_switch = "absolute right-4"
 
 
-# GUI callback functions
-# def show_output():
-#     """Creates dialog with output"""
-#     text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
-#     image_output_fp = file_paths.get_decrypted_output_file_path()
-#     # If there is output use that as the content of the markdown
-#     if os.path.exists(image_output_fp):
-#         with ui.dialog() as dialog, ui.card():
-#             ui.label("Image Output").tailwind(styles.prompt_text_v)
-#             ui.markdown(f"![output]({image_output_fp})")
-#             with ui.row():
-#                 ui.button("Download", on_click=lambda: ui.download(image_output_fp))
-#                 ui.button("Close", on_click=dialog.close)
-#         dialog.open()
-#     elif os.path.exists(text_output_fp):
-#         with open(text_output_fp, "r") as o:
-#             text = o.read()
-#         with ui.dialog() as dialog, ui.card():
-#             ui.label("Text Output").tailwind(styles.prompt_text_v)
-#             ui.markdown(f"{text}")
-#             with ui.row():
-#                 ui.button("Close", on_click=dialog.close)
-#         dialog.open()
-#     else:
-#         ui.notify("Something went wrong, please try again.")
-
 def show_output(file_path, file_type):
     # If there is output use that as the content of the markdown
     styles = TailwindStyling()
@@ -118,7 +62,7 @@ def show_output(file_path, file_type):
             if os.path.exists(file_path):
                 with ui.dialog() as dialog, ui.card():
                     ui.label("Image Output").tailwind(styles.prompt_text_v)
-                    ui.markdown(f"![output]({file_path})")
+                    ui.image(file_path)
                     with ui.row():
                         ui.button("Download", on_click=lambda: ui.download(file_path))
                         ui.button("Close", on_click=dialog.close)
@@ -134,58 +78,6 @@ def show_output(file_path, file_type):
                         ui.button("Close", on_click=dialog.close)
                 dialog.open()
 
-
-# def handle_text_file_upload(file: events.UploadEventArguments) -> str | None:
-#     """Read a text file selected as an encryption message"""
-#     # Try to parse file as text, aborting if this fails
-#     with file.content as f:
-#         bytes = f.read()
-#     try:
-#         text = bytes.decode("utf-8")
-#     except UnicodeDecodeError:
-#         ui.notify("File could not be read correctly")
-#         return
-#     # Write to storage file
-#     with open(file_paths.get_user_text_fp(), "w") as f:
-#         f.write(text)
-
-
-# def handle_image_upload(img: events.UploadEventArguments, cover=False):
-#     """Handle user image to encrypt.
-#
-#     This function will take the image that was uploaded by the user
-#     and put it in the .static file folder of the repository as
-#     user_image.(file extension of original image)
-#     or
-#     cover_image.(file extension of original image)
-#
-#     param img: object that has uploaded file
-#     """
-#     # Get the binary of the tempfile object
-#     content = img.content.read()
-#     # Create a pillow image object using the binary
-#     try:
-#         with Image.open(io.BytesIO(content)) as image:
-#             image.load()
-#             rgb_image = image.convert("RGB")
-#     except UnidentifiedImageError:
-#         ui.notify("Could not load image!")
-#         return
-#     # Get the extension and check that it is present and valid
-#     acceptable_extensions = ["jpg", "png", "jpeg"]
-#     file_extension = os.path.splitext(img.name)[1]
-#     if not file_extension or file_extension[1:] not in acceptable_extensions:
-#         ui.notify("Not an acceptable file type!")
-#         return
-#     file_extension = file_extension[1:]
-#     # Save the image locally if the file extension is valid
-#     if cover:
-#         file_paths.cover_image_fe = "png"
-#         fp = file_paths.get_cover_image_fp()
-#     else:
-#         file_paths.user_image_fe = "png"
-#         fp = file_paths.get_user_image_fp()
-#     rgb_image.save(fp, format="PNG")
 
 def handle_upload(file: UploadEventArguments, file_type: FileType, file_name: str):
     match file_type:
@@ -242,80 +134,6 @@ async def encrypt_event(e: ClickEventArguments, file_type: FileType, text_input:
     param value: String with type of message will be encrypted. Will be "Text" or "Image".
     param text_input: Message to be encrypted into image
     """
-
-    # File paths for all images
-    # user_image_fp = file_paths.get_user_image_fp()
-    # cover_image_fp = file_paths.get_cover_image_fp()
-    # encrypt_output_image_fp = file_paths.get_encrypted_image_output_path()
-    # text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
-    # image_output_fp = file_paths.get_decrypted_output_file_path()
-    # Open the cover image
-    # try:
-    #     with Image.open(Filepath("cover.jpp").file) as cimg:
-    #         cimg.load()
-    # except InvalidFileError:
-    #     ui.notify("Cover image file cannot be read!")
-    #     return
-    #     # Check if user image is larger than cover image, resize if it is
-    # if value == "Image":
-    #     # Open user image
-    #     try:
-    #         with Image.open(user_image_fp) as uimg:
-    #             uimg.load()
-    #     except InvalidFileError:
-    #         ui.notify("Encryption image file cannot be read!")
-    #         return
-    #     # Check sizes
-    #     if uimg.size[0] > cimg.size[0] or uimg.size[1] > cimg.size[1]:
-    #         with ui.dialog() as dialog, ui.card():
-    #             ui.label("The image you want to encrypt is larger than the cover \
-    #                      image in one or both dimensions. It will be resized.")
-    #             with ui.row():
-    #                 ui.button("Continue", on_click=dialog.close)
-    #         dialog.open()
-    #     # Call function to encrypt user image into cover image
-    #     resized_uimg = image_resize(uimg, cimg.size, ResizeMode.SHRINK_TO_SCALE)
-    #     user_image_exif_data = resized_uimg.getexif()
-    #     new_exif_data = exif_embed_ipp(user_image_exif_data, resized_uimg.size)
-    #     output_image = encrypt_image_to_image(cimg, resized_uimg)
-    #     # Remove output file if it exists
-    #     if os.path.exists(image_output_fp):
-    #         os.remove(image_output_fp)
-    #     elif os.path.exists(text_output_fp):
-    #         os.remove(text_output_fp)
-    #     # Save the output image
-    #     output_image.save(encrypt_output_image_fp, exif=new_exif_data)
-    # elif value == "Text":
-    #     # Check if there is text input, possibly from user-provided file
-    #     if upload == "Read Text from File":
-    #         try:
-    #             with open(file_paths.get_user_text_fp()) as f:
-    #                 text_input = f.read()
-    #         except FileNotFoundError:
-    #             ui.notify("Text input file not found!")
-    #             return
-    #         except OSError:
-    #             ui.notify("Error reading text input!")
-    #             return
-    #
-    #     # Call function to encrypt text into cover image
-    #     output_image = encrypt_text_to_image(text_input, cimg)
-    #     # Check return value in case text is too long
-    #     if output_image is None:
-    #         ui.notify("Text message is too long for image!")
-    #         return
-    #     # Only remove input if encryption succeeded
-    #     if os.path.exists(file_paths.get_user_text_fp()):
-    #         os.remove(file_paths.get_user_text_fp())
-    #     # Remove output file if it exists
-    #     if os.path.exists(image_output_fp):
-    #         os.remove(image_output_fp)
-    #     elif os.path.exists(text_output_fp):
-    #         os.remove(text_output_fp)
-    #     # Save the output image
-    #     output_image.save(encrypt_output_image_fp)
-    # show_output()
-
     try:
         cover = [file for file in os.listdir(".static") if "cover" in file][0]
         with Image.open(file_find(cover)) as cimg:
@@ -356,9 +174,7 @@ async def encrypt_event(e: ClickEventArguments, file_type: FileType, text_input:
         case file_type.TEXT:
             if text_input is None:
                 _path = Filepath("message", "txt")
-                # message = [file for file in os.listdir(".static") if "message" in file][0]
                 try:
-                    x = _path.get_filepath_full()
                     with open(_path.get_filepath_full()) as f:
                         text_input = f.read()
                 except FileNotFoundError:
@@ -371,47 +187,10 @@ async def encrypt_event(e: ClickEventArguments, file_type: FileType, text_input:
             else:
                 out = Filepath("output", cimg.format.lower())
                 out_image.save(out.get_filepath_full())
-                ui.notify("Image encryption complete!")
-                # show_output(out.get_filepath_full(), file_type.IMAGE)
+                ui.notify("Text encryption complete!")
+                show_output(out.get_filepath_full(), file_type.IMAGE)
 
 
-# def decrypt_event():
-#     """Function that does procedures for decryption
-#
-#     Loads up the cover_image gotten from the user
-#     and calls the decrypt functions. If the text function detects text
-#     a text file with the decrypted message will be saved as a text file.
-#     Otherwise, the decrypted image will be saved.
-#     """
-#     # File path of cover image
-#     # cover_image_fp = file_paths.get_cover_image_fp()
-#     # text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
-#     # image_output_fp = file_paths.get_decrypted_output_file_path()
-#     # Open the cover image
-#     try:
-#         with Image.open(cover_image_fp) as cimg:
-#             cimg.load()
-#     except InvalidFileError:
-#         ui.notify("Cover image file can't be read!")
-#         return
-#     # Call the function to decrypt text from image
-#     decrypt_text, end_code_found = decrypt_text_from_image(cimg)
-#     # Save output as text file
-#     if end_code_found:
-#         # Remove output file if it exists
-#         if os.path.exists(image_output_fp):
-#             os.remove(image_output_fp)
-#         # Create new output file
-#         with open(text_output_fp, "w") as f:
-#             f.write(decrypt_text)
-#     else:
-#         # Remove output file if it exists
-#         if os.path.exists(text_output_fp):
-#             os.remove(text_output_fp)
-#         # Call the function to decrypt an image from an image
-#         # Save output as an image
-#         decrypt_image_from_image(cimg).save(image_output_fp)
-#     show_output()
 def decrypt_event():
     """Function that does procedures for decryption
 
@@ -420,21 +199,10 @@ def decrypt_event():
     a text file with the decrypted message will be saved as a text file.
     Otherwise, the decrypted image will be saved.
     """
-    # File path of cover image
-    # cover_image_fp = file_paths.get_cover_image_fp()
-    # text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
-    # image_output_fp = file_paths.get_decrypted_output_file_path()
-    # Open the cover image
     try:
         cover = [file for file in os.listdir(".static") if "cover" in file][0]
         with Image.open(file_find(cover)) as cimg:
             cimg.load()
-            # Save output as an image
-            # dec = Filepath("decrypted", cimg.format.lower())
-            # decrypt_image_from_image(cimg).save(file_find(f"decrypted.{cimg.format.lower()}"))
-            # decrypt_image_from_image(cimg).save(file_find(dec.get_filepath_full()))
-            ui.notify("Image decryption complete!")
-
             decrypt_text, end_code_found = decrypt_text_from_image(cimg)
             # Save output as text file
             if end_code_found:
@@ -446,31 +214,15 @@ def decrypt_event():
                 with open(secret_message.get_filepath_full(), "w") as f:
                     f.write(decrypt_text)
                 show_output(secret_message.get_filepath_full(), FileType.TEXT)
+                ui.notify("Image decryption complete!")
 
             else:
                 dec = Filepath("decrypted", cimg.format.lower())
-                decrypt_image_from_image(cimg).save(file_find(dec.get_filepath_full()))
+                decrypt_image_from_image(cimg).save(dec.get_filepath_full())
                 ui.notify("Image decryption complete!")
                 show_output(dec.get_filepath_full(), FileType.IMAGE)
     except InvalidFileError:
         ui.notify("Cover image file can't be read!")
-    # Call the function to decrypt text from image
-    # decrypt_text, end_code_found = decrypt_text_from_image(cimg)
-    # # Save output as text file
-    # if end_code_found:
-    #     # Remove output file if it exists
-    #     if os.path.exists(image_output_fp):
-    #         os.remove(image_output_fp)
-    #     # Create new output file
-    #     with open(text_output_fp, "w") as f:
-    #         f.write(decrypt_text)
-    # else:
-    #     # Remove output file if it exists
-    #     if os.path.exists(text_output_fp):
-    #         os.remove(text_output_fp)
-    # Call the function to decrypt an image from an image
-    #
-    # show_output()
 
 
 def main():
