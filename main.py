@@ -1,48 +1,37 @@
 import io
-import os
 from dataclasses import dataclass
+import os
+from os import path
 
-from nicegui import app, events, ui
 from PIL import Image, UnidentifiedImageError
+from nicegui import app, ui
+from nicegui.events import UploadEventArguments, ClickEventArguments
 
-from helper.constant import ResizeMode
+from helper.constant import ResizeMode, exif_embed_ipp, image_resize, FileType, image_size_compare, Sizing, \
+    UI_STRINGS, DESCRIPTION
 from helper.decrypt import decrypt_image_from_image, decrypt_text_from_image
 from helper.encrypt import encrypt_image_to_image, encrypt_text_to_image
-from helper.utility import exif_embed_ipp, image_resize
 
 InvalidFileError = (OSError, UnidentifiedImageError)
 
 
 @dataclass
-class Filepaths:
-    """Class that has file paths of user image, cover image, and output files"""
+class Filepath:
+    file: str
+    ext: str
 
-    user_text_fe = "txt"
-    user_image_fe = ""
-    cover_image_fe = ""
+    def get_file(self):
+        return self.file + "." + self.ext
 
-    def get_user_text_fp(self):
-        """Get file path for user upload text"""
-        return os.path.join("static", f"user_text.{self.user_text_fe}")
+    def get_filepath(self):
+        return path.join(".static", self.file)
 
-    def get_user_image_fp(self):
-        """Get file path for user image"""
-        return os.path.join("static", f"user_image.{self.user_image_fe}")
+    def get_filepath_full(self):
+        return path.join(".static", f'{self.file}.{self.ext}')
 
-    def get_cover_image_fp(self):
-        """Get file path for cover image"""
-        return os.path.join("static", f"cover_image.{self.cover_image_fe}")
 
-    def get_encrypted_image_output_path(self):
-        """Get file path for encrypted output image"""
-        return os.path.join("static", f"output.{self.cover_image_fe}")
-
-    def get_decrypted_output_file_path(self, text=False):
-        """Get file path for decrypted output, either an image or text file"""
-        if text:
-            return os.path.join("static", "output.txt")
-        else:
-            return os.path.join("static", f"output.{self.cover_image_fe}")
+def file_find(name: str) -> str:
+    return path.join(".static", name)
 
 
 @dataclass
@@ -65,194 +54,142 @@ class TailwindStyling:
     dark_mode_switch = "absolute right-4"
 
 
-# GUI callback functions
-def show_output():
-    """Creates dialog with output"""
-    text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
-    image_output_fp = file_paths.get_decrypted_output_file_path()
+def show_output(file_path, file_type):
     # If there is output use that as the content of the markdown
-    if os.path.exists(image_output_fp):
-        with ui.dialog() as dialog, ui.card():
-            ui.label("Image Output").tailwind(styles.prompt_text_v)
-            ui.markdown(f"![output]({image_output_fp})")
-            with ui.row():
-                ui.button("Download", on_click=lambda: ui.download(image_output_fp))
-                ui.button("Close", on_click=dialog.close)
-        dialog.open()
-    elif os.path.exists(text_output_fp):
-        with open(text_output_fp, "r") as o:
-            text = o.read()
-        with ui.dialog() as dialog, ui.card():
-            ui.label("Text Output").tailwind(styles.prompt_text_v)
-            ui.markdown(f"{text}")
-            with ui.row():
-                ui.button("Close", on_click=dialog.close)
-        dialog.open()
-    else:
-        ui.notify("Something went wrong, please try again.")
+    match file_type:
+        case file_type.IMAGE:
+            if os.path.exists(file_path):
+                with ui.dialog() as dialog, ui.card():
+                    ui.label("Image Output").tailwind(styles.prompt_text_v)
+                    ui.image(file_path)
+                    with ui.row():
+                        ui.button("Download", on_click=lambda: ui.download(file_path))
+                        ui.button("Close", on_click=dialog.close)
+                dialog.open()
+        case file_type.TEXT:
+            if os.path.exists(file_path):
+                with open(file_path, "r") as o:
+                    text = o.read()
+                with ui.dialog() as dialog, ui.card():
+                    ui.label("Text Output").tailwind(styles.prompt_text_v)
+                    ui.markdown(f"{text}")
+                    with ui.row():
+                        ui.button("Close", on_click=dialog.close)
+                dialog.open()
 
 
-def handle_text_file_upload(file: events.UploadEventArguments) -> str | None:
-    """Read a text file selected as an encryption message"""
-    # Try to parse file as text, aborting if this fails
-    with file.content as f:
-        bytes = f.read()
-    try:
-        text = bytes.decode("utf-8")
-    except UnicodeDecodeError:
-        ui.notify("File could not be read correctly")
-        text_upload.reset()
-        return
-    # Write to storage file
-    with open(file_paths.get_user_text_fp(), "w") as f:
-        f.write(text)
+def handle_upload(file: UploadEventArguments, file_type: FileType, file_name: str):
+    match file_type:
+        case FileType.TEXT:
+            """Read a text file selected as an encryption message"""
+            # Try to parse file as text, aborting if this fails
+            with file.content as f:
+                _bytes = f.read()
+            try:
+                text = _bytes.decode("utf-8")
+                # Write to storage file
+                _path = Filepath(file_name, "txt")
+                with open(_path.get_filepath_full(), "w") as f:
+                    f.write(text)
+                    ui.notify(f'{file.name} loaded')
+            except UnicodeDecodeError:
+                ui.notify("File could not be read correctly")
+        case FileType.IMAGE:
+            """Handle user image to encrypt.
+
+            This function will take the image that was uploaded by the user
+            and put it in the .static file folder of the repository as
+            user_image.(file extension of original image)
+            or
+            cover_image.(file extension of original image)
+
+            param img: object that has uploaded file
+            """
+            # Get the binary of the tempfile object
+            content = file.content.read()
+            _, extension = file.name.split(".")
+            _path = Filepath(file_name, extension)
+            try:
+                with Image.open(io.BytesIO(content)) as image:
+                    image.load()
+                    exif = image.getexif()
+                    image.save(fp=_path.get_filepath_full(), exif=exif)
+                    ui.notify(f'{file.name} loaded')
+            except UnidentifiedImageError:
+                ui.notify("Could not load image!")
 
 
-def handle_image_upload(img: events.UploadEventArguments, cover=False):
-    """Handle user image to encrypt.
-
-    This function will take the image that was uploaded by the user
-    and put it in the static file folder of the repository as
-    user_image.(file extension of original image)
-    or
-    cover_image.(file extension of original image)
-
-    param img: object that has uploaded file
-    """
-    # Get the binary of the tempfile object
-    content = img.content.read()
-    # Create a pillow image object using the binary
-    try:
-        with Image.open(io.BytesIO(content)) as image:
-            image.load()
-            rgb_image = image.convert("RGB")
-    except UnidentifiedImageError:
-        ui.notify("Could not load image!")
-        if cover:
-            if dropdown_text_or_image.value == "Text":
-                cover_image_upload_text.reset()
-            else:
-                cover_image_upload_image.reset()
-        else:
-            secret_image_upload.reset()
-        return
-    # Get the extension and check that it is present and valid
-    acceptable_extensions = ["jpg", "png", "jpeg"]
-    file_extension = os.path.splitext(img.name)[1]
-    if not file_extension or file_extension[1:] not in acceptable_extensions:
-        ui.notify("Not an acceptable file type!")
-        return
-    file_extension = file_extension[1:]
-    # Save the image locally if the file extension is valid
-    if cover:
-        file_paths.cover_image_fe = "png"
-        fp = file_paths.get_cover_image_fp()
-    else:
-        file_paths.user_image_fe = "png"
-        fp = file_paths.get_user_image_fp()
-    rgb_image.save(fp, format="PNG")
-
-
-def encrypt_event(
-    e: events.ClickEventArguments,
-    value: str,
-    upload: str,
-    text_input: str | None = None,
-):
+async def encrypt_event(e: ClickEventArguments, file_type: FileType, text_input: str | None = None):
     """Function that checks if conditions for encryption are met and calls encrypt fucntion
 
     This function will check whether text or image is being encrypted into the cover_image.
     If it is an image it will first check if the user_image is smaller or equal
     in size to cover_image. If user_image is too large it will resize it to be the same
     size as the cover_image. Then, the appropriate function will be called to encrypt
-    either the text or image into the cover_image. The output image will be saved in static
+    either the text or image into the cover_image. The output image will be saved in .static
     folder as output_image.(cover image file extension)
 
     param e: GUI objects for click event.
     param value: String with type of message will be encrypted. Will be "Text" or "Image".
     param text_input: Message to be encrypted into image
     """
-    # File paths for all images
-    user_image_fp = file_paths.get_user_image_fp()
-    cover_image_fp = file_paths.get_cover_image_fp()
-    encrypt_output_image_fp = file_paths.get_encrypted_image_output_path()
-    text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
-    image_output_fp = file_paths.get_decrypted_output_file_path()
-    # Open the cover image
     try:
-        with Image.open(cover_image_fp) as cimg:
+        cover = [file for file in os.listdir(".static") if "cover" in file][0]
+        with Image.open(file_find(cover)) as cimg:
             cimg.load()
     except InvalidFileError:
         ui.notify("Cover image file cannot be read!")
-        cover_image_upload_image.reset()
-        return
-        # Check if user image is larger than cover image, resize if it is
-    if value == "Image":
-        # Open user image
-        try:
-            with Image.open(user_image_fp) as uimg:
-                uimg.load()
-        except InvalidFileError:
-            ui.notify("Encryption image file cannot be read!")
-            secret_image_upload.reset()
-            return
-        # Check sizes
-        if uimg.size[0] > cimg.size[0] or uimg.size[1] > cimg.size[1]:
-            with ui.dialog() as dialog, ui.card():
-                ui.label(
-                    "The image you want to encrypt is larger than the cover \
-                         image in one or both dimensions. It will be resized."
-                )
-                with ui.row():
-                    ui.button("Continue", on_click=dialog.close)
-            dialog.open()
-        # Call function to encrypt user image into cover image
-        resized_uimg = image_resize(uimg, cimg.size, ResizeMode.SHRINK_TO_SCALE)
-        user_image_exif_data = resized_uimg.getexif()
-        new_exif_data = exif_embed_ipp(user_image_exif_data, resized_uimg.size)
-        output_image = encrypt_image_to_image(cimg, resized_uimg)
-        # Remove output file if it exists
-        if os.path.exists(image_output_fp):
-            os.remove(image_output_fp)
-        elif os.path.exists(text_output_fp):
-            os.remove(text_output_fp)
-        # Save the output image
-        output_image.save(encrypt_output_image_fp, exif=new_exif_data)
-    elif value == "Text":
-        # Check if there is text input, possibly from user-provided file
-        if upload == "Read Text from File":
-            try:
-                with open(file_paths.get_user_text_fp()) as f:
-                    text_input = f.read()
-            except FileNotFoundError:
-                ui.notify("Text input file not found!")
-                text_upload.reset()
-                return
-            except OSError:
-                ui.notify("Error reading text input!")
-                text_upload.reset()
-                return
 
-        # Call function to encrypt text into cover image
-        output_image = encrypt_text_to_image(text_input, cimg)
-        # Check return value in case text is too long
-        if output_image is None:
-            ui.notify("Text message is too long for image!")
-            text_upload.reset()
-            return
-        # Only remove input if encryption succeeded
-        text_fp = file_paths.get_user_text_fp()
-        if os.path.exists(text_fp):
-            os.remove(text_fp)
-            text_upload.reset()
-        # Remove output file if it exists
-        if os.path.exists(image_output_fp):
-            os.remove(image_output_fp)
-        elif os.path.exists(text_output_fp):
-            os.remove(text_output_fp)
-        # Save the output image
-        output_image.save(encrypt_output_image_fp)
-    show_output()
+    match file_type:
+        case file_type.IMAGE:
+            try:
+                secret = [file for file in os.listdir(".static") if "secret" in file][0]
+                with Image.open(file_find(secret)) as uimg:
+                    uimg.load()
+                    w_cimg, h_cimg = cimg.size
+                    w_uimg, h_uimg = uimg.size
+                    size_mode = image_size_compare(w_uimg, h_uimg, w_cimg, h_cimg)
+                    if size_mode != Sizing.SMALLER:
+                        with ui.dialog() as resize_dialog, ui.card():
+                            ui.label("Secret image exceeds cover image ratio and will be cropped.\n"
+                                     "Do you want to shrink the image to scale?")
+                            with ui.row():
+                                ui.button("Yes", on_click=lambda: resize_dialog.submit(ResizeMode.SHRINK_TO_SCALE))
+                                ui.button("No", on_click=lambda: resize_dialog.submit(ResizeMode.DEFAULT))
+
+                    resize_mode = await resize_dialog
+                    if resize_mode is None:
+                        resize_mode = ResizeMode.DEFAULT
+                    resized_uimg = image_resize(uimg, cimg.size, resize_mode)
+                    user_image_exif_data = resized_uimg.getexif()
+                    new_exif_data = exif_embed_ipp(user_image_exif_data, resized_uimg.size)
+                    output_image = encrypt_image_to_image(cimg, resized_uimg)
+                    output = Filepath("output", cimg.format.lower())
+                    output_image.save(output.get_filepath_full(), exif=new_exif_data)
+                    ui.notify("Image encryption complete!")
+                    show_output(output.get_filepath_full(), file_type.IMAGE)
+
+            except InvalidFileError:
+                ui.notify("Encryption image file cannot be read!")
+
+        case file_type.TEXT:
+            if text_input is None:
+                _path = Filepath("message", "txt")
+                try:
+                    with open(_path.get_filepath_full()) as f:
+                        text_input = f.read()
+                except FileNotFoundError:
+                    ui.notify("Text input file not found!")
+                except OSError:
+                    ui.notify("Error reading text input!")
+            out_image = encrypt_text_to_image(text_input, cimg)
+            if out_image is None:
+                ui.notify("Text message is too long for image!")
+            else:
+                out = Filepath("output", cimg.format.lower())
+                out_image.save(out.get_filepath_full())
+                ui.notify("Text encryption complete!")
+                show_output(out.get_filepath_full(), file_type.IMAGE)
 
 
 def decrypt_event():
@@ -263,179 +200,115 @@ def decrypt_event():
     a text file with the decrypted message will be saved as a text file.
     Otherwise, the decrypted image will be saved.
     """
-    # File path of cover image
-    cover_image_fp = file_paths.get_cover_image_fp()
-    text_output_fp = file_paths.get_decrypted_output_file_path(text=True)
-    image_output_fp = file_paths.get_decrypted_output_file_path()
-    # Open the cover image
     try:
-        with Image.open(cover_image_fp) as cimg:
+        cover = [file for file in os.listdir(".static") if "cover" in file][0]
+        with Image.open(file_find(cover)) as cimg:
             cimg.load()
+            decrypt_text, end_code_found = decrypt_text_from_image(cimg)
+            # Save output as text file
+            if end_code_found:
+                secret_message = Filepath("secret_message", "txt")
+                # Remove output file if it exists
+                if os.path.exists(secret_message.get_filepath_full()):
+                    os.remove(secret_message.get_filepath_full())
+                # Create new output file
+                with open(secret_message.get_filepath_full(), "w") as f:
+                    f.write(decrypt_text)
+                show_output(secret_message.get_filepath_full(), FileType.TEXT)
+                ui.notify("Image decryption complete!")
+
+            else:
+                dec = Filepath("decrypted", cimg.format.lower())
+                decrypt_image_from_image(cimg).save(dec.get_filepath_full())
+                ui.notify("Image decryption complete!")
+                show_output(dec.get_filepath_full(), FileType.IMAGE)
     except InvalidFileError:
         ui.notify("Cover image file can't be read!")
-        return
-    # Call the function to decrypt text from image
-    decrypt_text, end_code_found = decrypt_text_from_image(cimg)
-    # Save output as text file
-    if end_code_found:
-        # Remove output file if it exists
-        if os.path.exists(image_output_fp):
-            os.remove(image_output_fp)
-        # Create new output file
-        with open(text_output_fp, "w") as f:
-            f.write(decrypt_text)
-        cover_image_upload_text.reset()
-    else:
-        # Remove output file if it exists
-        if os.path.exists(text_output_fp):
-            os.remove(text_output_fp)
-        # Call the function to decrypt an image from an image
-        # Save output as an image
-        decrypt_image_from_image(cimg).save(image_output_fp)
-        cover_image_upload_image.reset()
-    # Flush upload prompts
-    secret_image_upload.reset()
-    decrypt_image_upload.reset()
-    show_output()
 
 
 # GUI Contents
 
-# Create Filepaths object to keep track of file paths
-file_paths = Filepaths()
 # Create TailwindStyling object for components styles
 styles = TailwindStyling()
 
-# Add static files folder
-app.add_static_files("/static", "static")
+# Add .static files folder
+app.add_static_files("/static", ".static")
 # Add dark mode config
 dark_mode = ui.dark_mode()
 
-# Title of the project
-with ui.header(elevated=False) as h:
-    h.tailwind(styles.header_row)
-    ui.label("In Plain Pixel").tailwind(styles.title_text)
-    dark_mode_button = ui.checkbox("Dark Mode").bind_value_to(dark_mode, "value")
-    dark_mode_button.tailwind(styles.dark_mode_switch)
 
-# Prompt user to choose whether to encrypt or decrypt
-with ui.row():
-    ui.label("Select Encrpyt/Decrypt:").tailwind(styles.prompt_text_h)
-    dropdown_encrypt_or_decrypt = ui.select(["Encrypt", "Decrypt"], value="Encrypt")
+def switch_tab(msg: dict) -> None:
+    _name = msg['args']
+    tabs.props(f'model-value={_name}')
+    panels.props(f'model-value={_name}')
 
-# Card with user input needed for encrypt with encrypt button
-with ui.card().bind_visibility_from(
-    dropdown_encrypt_or_decrypt, "value", value="Encrypt"
-) as ed:
-    ed.tailwind(styles.center_card)
-    # Prompt the user to select the message type
-    with ui.row():
-        ui.label("Choose message type:").tailwind(styles.prompt_text_h)
-        dropdown_text_or_image = ui.select(["Text", "Image"], value="Text")
-    # User input needed if text message type is chosen
-    with ui.column().bind_visibility_from(
-        dropdown_text_or_image, "value", value="Text"
-    ):
-        # Prompt the user for the text they want to encrypt into cover image
-        with ui.row():
-            ui.label("Choose message source:").tailwind(styles.prompt_text_h)
-            enter_text_or_upload = ui.select(
-                ["Enter Text", "Read Text from File"], value="Enter Text"
-            )
-        with ui.column().bind_visibility_from(
-            enter_text_or_upload, "value", value="Enter Text"
-        ):
-            with ui.row():
-                with ui.column():
-                    ui.label("Enter Text:").tailwind(styles.prompt_text_h)
-                with ui.column():
-                    text_entry = text_to_encrypt = ui.textarea(
-                        label="Message", placeholder="Hello World"
-                    )
 
-        with ui.column().bind_visibility_from(
-            enter_text_or_upload, "value", value="Read Text from File"
-        ):
-            with ui.row():
-                with ui.column():
-                    ui.label("Select Text File:").tailwind(styles.prompt_text_v)
-                    text_upload = ui.upload(
-                        auto_upload=True, on_upload=handle_text_file_upload, max_files=1
-                    )
-        # Prompt the user for the image they want to encrypt a message into
+with ui.header().classes('items-center', remove='q-pa-md gap-0') as header:
+    with ui.element('q-tabs').on('update:model-value', switch_tab) as tabs:
         with ui.row():
-            with ui.column():
-                ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
-                cover_image_upload_text = ui.upload(
-                    auto_upload=True,
-                    on_upload=lambda e: handle_image_upload(e, cover=True),
-                    max_files=1,
-                )
-        with ui.row() as et:
-            et.tailwind(styles.button_row)
-            encrypt_text_button = ui.button(
-                "Encrypt",
-                on_click=lambda e: encrypt_event(
-                    e,
-                    dropdown_text_or_image.value,
-                    enter_text_or_upload.value,
-                    (
-                        text_to_encrypt
-                        if isinstance(text_to_encrypt, str)
-                        else text_to_encrypt.value
-                    ),
-                ),
-            )
-            encrypt_text_button.tailwind(styles.button_center)
-    # User input needed if image message type is chosen
-    with ui.column().bind_visibility_from(
-        dropdown_text_or_image, "value", value="Image"
-    ):
-        # Prompt the user for the image they want to encrypt into cover image
-        with ui.row():
-            with ui.column():
-                ui.label("Enter Image to Encrypt:").tailwind(styles.prompt_text_v)
-                secret_image_upload = ui.upload(
-                    auto_upload=True,
-                    on_upload=handle_image_upload,
-                    max_files=1,
-                )
-        # Prompt the user for the image they want to encrypt a message into
-        with ui.row():
-            with ui.column():
-                ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
-                cover_image_upload_image = ui.upload(
-                    auto_upload=True,
-                    on_upload=lambda e: handle_image_upload(e, cover=True),
-                    max_files=1,
-                )
-        with ui.row() as ei:
-            ei.tailwind(styles.button_row)
-            encrypt_image_button = ui.button(
-                "Encrypt",
-                on_click=lambda e: encrypt_event(e, dropdown_text_or_image.value, None),
-            )
-            encrypt_image_button.tailwind(styles.button_center)
+            with ui.button(icon='menu'):
+                with ui.menu() as menu:
+                    ui.menu_item('Menu item 1')
+                    ui.separator()
+                    ui.menu_item('Close', on_click=app.shutdown)
+        for name in UI_STRINGS["crypt_type"]:
+            ui.element('q-tab').props(f'name={name} label={name}')
 
-# Card with user input needed for decrypt with decrypt button
-with ui.card().bind_visibility_from(
-    dropdown_encrypt_or_decrypt, "value", value="Decrypt"
-) as de:
-    de.tailwind(styles.center_card)
-    with ui.column():
-        # Prompt the user for the image they want to decrypt
-        with ui.row():
-            with ui.column():
-                ui.label("Enter Image to Decrypt:").tailwind(styles.prompt_text_v)
-                decrypt_image_upload = ui.upload(
-                    auto_upload=True,
-                    on_upload=lambda e: handle_image_upload(e, cover=True),
-                    max_files=1,
-                )
-        with ui.row() as di:
-            di.tailwind(styles.button_row)
-            decrypt_image_button = ui.button("Decrypt", on_click=decrypt_event)
-            decrypt_image_button.tailwind(styles.button_center)
+with ui.footer(value=False) as footer:
+    ui.label(DESCRIPTION)
 
-# Initialize and run the GUI
+with ui.page_sticky(position='bottom-right', x_offset=20, y_offset=20):
+    ui.button(on_click=lambda: footer.set_value(not footer.value)).props('fab icon=contact_support')
+
+# the page content consists of multiple tab panels
+with ui.element('q-tab-panels').props('model-value=Encrypt animated').classes('w-full') as panels:
+    with ui.element('q-tab-panel').props(f'name=Encrypt'):
+        with ui.tabs().classes('w-full') as enc_tabs:
+            txt = ui.tab('Text', icon='text_fields')
+            txt_file = ui.tab('Text File', icon='text_snippet')
+            img = ui.tab('Image', icon="image")
+        with ui.tab_panels(enc_tabs, value=txt).classes('w-full'):
+            with ui.tab_panel(txt):
+                with ui.row():
+                    text_to_encrypt = ui.textarea(label="Message", placeholder="Enter secret message")
+                    ui.upload(label="Attach image to encrypt", auto_upload=True,
+                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
+                              max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                        'accept="image/jpg, image/jpeg, image/png"')
+                    encrypt_txt_to_image_button = ui.button("Encrypt",
+                                                            on_click=lambda e: encrypt_event(e, FileType.TEXT,
+                                                                                             text_to_encrypt.value))
+            with ui.tab_panel(txt_file):
+                with ui.row():
+                    ui.upload(label="Attach text file", auto_upload=True,
+                              on_upload=lambda e: handle_upload(e, FileType.TEXT, "message"),
+                              max_files=1, on_rejected=ui.notify("Text file rejected")).props("accept=.txt")
+                    ui.upload(label="Attach image to encrypt", auto_upload=True,
+                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
+                              max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                        'accept="image/jpg, image/jpeg, image/png"')
+                    encrypt_txtfile_to_image_button = ui.button("Encrypt",
+                                                                on_click=lambda e: encrypt_event(e, FileType.TEXT,
+                                                                                                 None))
+            with ui.tab_panel(img):
+                with ui.row():
+                    cover_enc_upload = ui.upload(label="Attach image to encrypt", auto_upload=True,
+                                                 on_upload=lambda e: handle_upload(e, FileType.IMAGE, "secret"),
+                                                 max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                        'accept="image/jpg, image/jpeg, image/png"')
+                    ui.upload(label="Attach image to encrypt", auto_upload=True,
+                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
+                              max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                        'accept="image/jpg, image/jpeg, image/png"')
+                    encrypt_image_button = ui.button("Encrypt", on_click=lambda e: encrypt_event(e, FileType.IMAGE))
+
+    with ui.element('q-tab-panel').props(f'name=Decrypt'):
+        with ui.card().bind_visibility_from(f'model-value={name}', value="Decrypt").props(f'name={name}') as cover_dec:
+            # Prompt the user for the image they want to decrypt
+            with ui.column().classes("items-center"):
+                ui.upload(label="Attach image to decrypt", auto_upload=True,
+                          on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
+                          max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                    'accept="image/jpg, image/jpeg, image/png"')
+                decrypt_image_button = ui.button("Decrypt", on_click=decrypt_event)
 ui.run()
