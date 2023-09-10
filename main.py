@@ -101,6 +101,7 @@ def handle_text_file_upload(file: events.UploadEventArguments) -> str | None:
         text = bytes.decode("utf-8")
     except UnicodeDecodeError:
         ui.notify("File could not be read correctly")
+        text_upload.reset()
         return
     # Write to storage file
     with open(file_paths.get_user_text_fp(), "w") as f:
@@ -127,6 +128,13 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
             rgb_image = image.convert("RGB")
     except UnidentifiedImageError:
         ui.notify("Could not load image!")
+        if cover:
+            if dropdown_text_or_image.value == "Text":
+                cover_image_upload_text.reset()
+            else:
+                cover_image_upload_image.reset()
+        else:
+            secret_image_upload.reset()
         return
     # Get the extension and check that it is present and valid
     acceptable_extensions = ["jpg", "png", "jpeg"]
@@ -176,6 +184,7 @@ def encrypt_event(
             cimg.load()
     except InvalidFileError:
         ui.notify("Cover image file cannot be read!")
+        cover_image_upload_image.reset()
         return
         # Check if user image is larger than cover image, resize if it is
     if value == "Image":
@@ -185,6 +194,7 @@ def encrypt_event(
                 uimg.load()
         except InvalidFileError:
             ui.notify("Encryption image file cannot be read!")
+            secret_image_upload.reset()
             return
         # Check sizes
         if uimg.size[0] > cimg.size[0] or uimg.size[1] > cimg.size[1]:
@@ -216,9 +226,11 @@ def encrypt_event(
                     text_input = f.read()
             except FileNotFoundError:
                 ui.notify("Text input file not found!")
+                text_upload.reset()
                 return
             except OSError:
                 ui.notify("Error reading text input!")
+                text_upload.reset()
                 return
 
         # Call function to encrypt text into cover image
@@ -226,6 +238,7 @@ def encrypt_event(
         # Check return value in case text is too long
         if output_image is None:
             ui.notify("Text message is too long for image!")
+            text_upload.reset()
             return
         # Only remove input if encryption succeeded
         text_fp = file_paths.get_user_text_fp()
@@ -271,6 +284,7 @@ def decrypt_event():
         # Create new output file
         with open(text_output_fp, "w") as f:
             f.write(decrypt_text)
+        cover_image_upload_text.reset()
     else:
         # Remove output file if it exists
         if os.path.exists(text_output_fp):
@@ -278,8 +292,8 @@ def decrypt_event():
         # Call the function to decrypt an image from an image
         # Save output as an image
         decrypt_image_from_image(cimg).save(image_output_fp)
+        cover_image_upload_image.reset()
     # Flush upload prompts
-    cover_image_upload.reset()
     secret_image_upload.reset()
     decrypt_image_upload.reset()
     show_output()
@@ -352,7 +366,7 @@ with ui.card().bind_visibility_from(
         with ui.row():
             with ui.column():
                 ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
-                cover_image_upload = ui.upload(
+                cover_image_upload_text = ui.upload(
                     auto_upload=True,
                     on_upload=lambda e: handle_image_upload(e, cover=True),
                     max_files=1,
@@ -390,7 +404,7 @@ with ui.card().bind_visibility_from(
         with ui.row():
             with ui.column():
                 ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
-                cover_image_upload = ui.upload(
+                cover_image_upload_image = ui.upload(
                     auto_upload=True,
                     on_upload=lambda e: handle_image_upload(e, cover=True),
                     max_files=1,
