@@ -7,10 +7,11 @@ from PIL import Image, UnidentifiedImageError
 from nicegui import app, ui
 from nicegui.events import UploadEventArguments, ClickEventArguments
 
-from helper.constant import ResizeMode, exif_embed_ipp, image_resize, FileType, image_size_compare, Sizing, \
+from helper.constant import ResizeMode, FileType, Sizing, \
     UI_STRINGS, DESCRIPTION
 from helper.decrypt import decrypt_image_from_image, decrypt_text_from_image
 from helper.encrypt import encrypt_image_to_image, encrypt_text_to_image
+from helper.utility import image_size_compare, image_resize, exif_embed_ipp
 
 InvalidFileError = (OSError, UnidentifiedImageError)
 
