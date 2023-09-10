@@ -1,14 +1,13 @@
 import io
-import os
-from os import path, remove
 from dataclasses import dataclass
+from os import path
 
-from nicegui import app, events, ui
-from nicegui.events import UploadEventArguments, ClickEventArguments
 from PIL import Image, UnidentifiedImageError
+from nicegui import app, ui
+from nicegui.events import UploadEventArguments, ClickEventArguments
 
-from helper import ResizeMode, exif_embed_ipp, image_resize, SOFTWARE_TITLE, FileType, image_size_compare, Sizing, \
-    TextType
+from helper import ResizeMode, exif_embed_ipp, image_resize, FileType, image_size_compare, Sizing, \
+    UI_STRINGS, DESCRIPTION
 from helper.decrypt import decrypt_image_from_image, decrypt_text_from_image
 from helper.encrypt import encrypt_image_to_image, encrypt_text_to_image
 
@@ -56,7 +55,6 @@ class TailwindStyling:
 
 def show_output(file_path, file_type):
     # If there is output use that as the content of the markdown
-    styles = TailwindStyling()
     match file_type:
         case file_type.IMAGE:
             if os.path.exists(file_path):
@@ -159,6 +157,8 @@ async def encrypt_event(e: ClickEventArguments, file_type: FileType, text_input:
                                 ui.button("No", on_click=lambda: resize_dialog.submit(ResizeMode.DEFAULT))
 
                     resize_mode = await resize_dialog
+                    if resize_mode is None:
+                        resize_mode = ResizeMode.DEFAULT
                     resized_uimg = image_resize(uimg, cimg.size, resize_mode)
                     user_image_exif_data = resized_uimg.getexif()
                     new_exif_data = exif_embed_ipp(user_image_exif_data, resized_uimg.size)
@@ -225,117 +225,89 @@ def decrypt_event():
         ui.notify("Cover image file can't be read!")
 
 
-def main():
-    # GUI Contents
+# GUI Contents
 
-    # Create TailwindStyling object for components styles
-    styles = TailwindStyling()
+# Create TailwindStyling object for components styles
+styles = TailwindStyling()
 
-    # Add .static files folder
-    app.add_static_files("/static", ".static")
-    # Add dark mode config
-    dark_mode = ui.dark_mode()
+# Add .static files folder
+app.add_static_files("/static", ".static")
+# Add dark mode config
+dark_mode = ui.dark_mode()
 
-    # Title of the project
-    with ui.header(elevated=False) as h:
-        h.tailwind(styles.header_row)
-        ui.label(SOFTWARE_TITLE).tailwind(styles.title_text)
-        dark_mode_button = ui.checkbox("Dark Mode").bind_value_to(dark_mode, "value")
-        dark_mode_button.tailwind(styles.dark_mode_switch)
 
-    # Prompt user to choose whether to encrypt or decrypt
-    # with ui.row():
-    #     ui.label("Select Encrypt/Decrypt:").tailwind(styles.prompt_text_h)
-    #     dropdown_encrypt_or_decrypt = ui.select(["Encrypt", "Decrypt"], value="Encrypt")
-    with ui.row():
-        ui.label("Select Encrypt/Decrypt:").tailwind(styles.prompt_text_h)
-        dropdown_encrypt_or_decrypt = ui.select(["Encrypt", "Decrypt"], value="Encrypt")
+def switch_tab(msg: dict) -> None:
+    _name = msg['args']
+    tabs.props(f'model-value={_name}')
+    panels.props(f'model-value={_name}')
 
-    # Card with user input needed for encrypt with encrypt button
-    with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Encrypt") as ed:
-        ed.tailwind(styles.center_card)
-        # Prompt the user to select the message type
+
+with ui.header().classes('items-center', remove='q-pa-md gap-0') as header:
+    with ui.element('q-tabs').on('update:model-value', switch_tab) as tabs:
         with ui.row():
-            ui.label("Choose message type:").tailwind(styles.prompt_text_h)
-            dropdown_text_or_image = ui.select(["Text", "Image"], value="Text")
-        # User input needed if text message type is chosen
-        with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Text"):
-            # Prompt the user for the text they want to encrypt into cover image
-            with ui.row():
-                ui.label("Choose message source:").tailwind(styles.prompt_text_h)
-                enter_text_or_upload = ui.select(["Enter Text", "Read Text from File"], value="Enter Text")
-            with ui.column().bind_visibility_from(enter_text_or_upload, "value", value="Enter Text"):
-                with ui.row():
-                    with ui.column():
-                        ui.label("Enter Text:").tailwind(styles.prompt_text_h)
-                    with ui.column():
-                        text_to_encrypt = ui.textarea(label="Message", placeholder="Hello World")
+            with ui.button(icon='menu'):
+                with ui.menu() as menu:
+                    ui.menu_item('Menu item 1')
+                    ui.separator()
+                    ui.menu_item('Close', on_click=app.shutdown)
+        for name in UI_STRINGS["crypt_type"]:
+            ui.element('q-tab').props(f'name={name} label={name}')
 
-            with ui.column().bind_visibility_from(enter_text_or_upload, "value", value="Read Text from File"):
+with ui.footer(value=False) as footer:
+    ui.label(DESCRIPTION)
+
+with ui.page_sticky(position='bottom-right', x_offset=20, y_offset=20):
+    ui.button(on_click=lambda: footer.set_value(not footer.value)).props('fab icon=contact_support')
+
+# the page content consists of multiple tab panels
+with ui.element('q-tab-panels').props('model-value=Encrypt animated').classes('w-full') as panels:
+    with ui.element('q-tab-panel').props(f'name=Encrypt'):
+        with ui.tabs().classes('w-full') as enc_tabs:
+            txt = ui.tab('Text', icon='text_fields')
+            txt_file = ui.tab('Text File', icon='text_snippet')
+            img = ui.tab('Image', icon="image")
+        with ui.tab_panels(enc_tabs, value=txt).classes('w-full'):
+            with ui.tab_panel(txt):
                 with ui.row():
-                    with ui.column():
-                        ui.label("Select Text File:").tailwind(styles.prompt_text_v)
-                        ui.upload(auto_upload=True,
-                                  on_upload=lambda e: handle_upload(e, FileType.TEXT, "message"),
-                                  max_files=1, on_rejected=ui.notify("Text file rejected")).props("accept=.txt")
-            # Prompt the user for the image they want to encrypt a message into
-            with ui.row():
-                with ui.column():
-                    ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
-                    ui.upload(auto_upload=True,
+                    text_to_encrypt = ui.textarea(label="Message", placeholder="Enter secret message")
+                    ui.upload(label="Attach image to encrypt", auto_upload=True,
                               on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
                               max_files=1, on_rejected=ui.notify("Image file rejected")).props(
                         'accept="image/jpg, image/jpeg, image/png"')
-            with ui.row() as et:
-                et.tailwind(styles.button_row)
-                len_check = lambda x: x if len(x) > 0 else None
-                encrypt_text_button = ui.button("Encrypt", on_click=lambda e: encrypt_event(e, FileType.TEXT, len_check(
-                    text_to_encrypt.value)))
-                encrypt_text_button.tailwind(styles.button_center)
-
-        # User input needed if image message type is chosen
-        with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Image"):
-            # Prompt the user for the image they want to encrypt into cover image
-            with ui.row():
-                with ui.column():
-                    ui.label("Enter Image to Encrypt:").tailwind(styles.prompt_text_v)
-                    secret_upload = ui.upload(auto_upload=True,
-                                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, "secret"),
-                                              max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                    encrypt_txt_to_image_button = ui.button("Encrypt",
+                                                            on_click=lambda e: encrypt_event(e, FileType.TEXT,
+                                                                                             text_to_encrypt.value))
+            with ui.tab_panel(txt_file):
+                with ui.row():
+                    ui.upload(label="Attach text file", auto_upload=True,
+                              on_upload=lambda e: handle_upload(e, FileType.TEXT, "message"),
+                              max_files=1, on_rejected=ui.notify("Text file rejected")).props("accept=.txt")
+                    ui.upload(label="Attach image to encrypt", auto_upload=True,
+                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
+                              max_files=1, on_rejected=ui.notify("Image file rejected")).props(
                         'accept="image/jpg, image/jpeg, image/png"')
-            # Prompt the user for the image they want to encrypt a message into
-            with ui.row():
-                with ui.column():
-                    ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
-                    cover_upload = ui.upload(auto_upload=True,
-                                             on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
-                                             max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                    encrypt_txtfile_to_image_button = ui.button("Encrypt",
+                                                                on_click=lambda e: encrypt_event(e, FileType.TEXT,
+                                                                                                 None))
+            with ui.tab_panel(img):
+                with ui.row():
+                    cover_enc_upload = ui.upload(label="Attach image to encrypt", auto_upload=True,
+                                                 on_upload=lambda e: handle_upload(e, FileType.IMAGE, "secret"),
+                                                 max_files=1, on_rejected=ui.notify("Image file rejected")).props(
                         'accept="image/jpg, image/jpeg, image/png"')
-            with ui.row() as ei:
-                ei.tailwind(styles.button_row)
-                encrypt_image_button = ui.button("Encrypt", on_click=lambda e: encrypt_event(e, FileType.IMAGE))
-                encrypt_image_button.tailwind(styles.button_center)
+                    ui.upload(label="Attach image to encrypt", auto_upload=True,
+                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
+                              max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                        'accept="image/jpg, image/jpeg, image/png"')
+                    encrypt_image_button = ui.button("Encrypt", on_click=lambda e: encrypt_event(e, FileType.IMAGE))
 
-    # Card with user input needed for decrypt with decrypt button
-    with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Decrypt") as de:
-        de.tailwind(styles.center_card)
-        with ui.column():
+    with ui.element('q-tab-panel').props(f'name=Decrypt'):
+        with ui.card().bind_visibility_from(f'model-value={name}', value="Decrypt").props(f'name={name}') as cover_dec:
             # Prompt the user for the image they want to decrypt
-            with ui.row():
-                with ui.column():
-                    ui.label("Enter Image to Decrypt:").tailwind(styles.prompt_text_v)
-                    ui.upload(auto_upload=True,
-                              on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
-                              max_files=1, on_rejected=ui.notify("Image file rejected")).props(
-                        'accept="image/jpg, image/jpeg, image/png"')
-            with ui.row() as di:
-                di.tailwind(styles.button_row)
+            with ui.column().classes("items-center"):
+                ui.upload(label="Attach image to decrypt", auto_upload=True,
+                          on_upload=lambda e: handle_upload(e, FileType.IMAGE, "cover"),
+                          max_files=1, on_rejected=ui.notify("Image file rejected")).props(
+                    'accept="image/jpg, image/jpeg, image/png"')
                 decrypt_image_button = ui.button("Decrypt", on_click=decrypt_event)
-                decrypt_image_button.tailwind(styles.button_center)
-
-    # Initialize and run the GUI
-    ui.run()
-
-
-if __name__ in {"__main__", "__mp_main__"}:
-    main()
+ui.run()

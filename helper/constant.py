@@ -11,8 +11,8 @@ BITS_4 = 4
 N_PLANES = 3
 
 UI_STRINGS = {
-    "crypt_type": ["Encrypt, Decrypt"],
-    "secret_type": ["Text, Image"],
+    "crypt_type": ["Encrypt", "Decrypt"],
+    "secret_type": ["Text", "Image"],
     "text_type": ["Text", "Text File"],
 
 }
