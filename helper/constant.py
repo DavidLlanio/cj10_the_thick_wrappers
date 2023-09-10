@@ -1,12 +1,14 @@
 from enum import Enum
 
 SOFTWARE_TITLE = "In Plain Pixel"
-TEAM_MEMBERS = "Davr, Jaavv, maxence, standard_effect"
+TEAM_MEMBERS = "Davr, Jaavv, maxence, standard_affect"
 DESCRIPTION = "Python Discord Summer Code Jam 2023 - The Thick Wrappers Project"
 EXIF_MAKE = "IPP"
 STARTING_X = 0
 STARTING_Y = 0
 BITS_4 = 4
+# R, G, B
+N_PLANES = 3
 
 
 class ResizeMode(Enum):
