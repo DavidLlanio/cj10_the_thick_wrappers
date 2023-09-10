@@ -7,6 +7,15 @@ EXIF_MAKE = "IPP"
 STARTING_X = 0
 STARTING_Y = 0
 BITS_4 = 4
+# R, G, B
+N_PLANES = 3
+
+UI_STRINGS = {
+    "crypt_type": ["Encrypt, Decrypt"],
+    "secret_type": ["Text, Image"],
+    "text_type": ["Text", "Text File"],
+
+}
 
 
 class ResizeMode(Enum):
@@ -42,3 +51,18 @@ class ExifData(Enum):
     ARTIST = 315
     SOFTWARE = 305
     DESCRIPTION = 270
+
+
+class CrypType(Enum):
+    ENCRYPT = 0
+    DECRYPT = 1
+
+
+class FileType(Enum):
+    TEXT = 0
+    IMAGE = 1
+
+
+class TextType(Enum):
+    TEXT = 0
+    TEXT_FILE = 1
