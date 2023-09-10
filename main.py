@@ -1,5 +1,6 @@
 import io
 from dataclasses import dataclass
+import os
 from os import path
 
 from PIL import Image, UnidentifiedImageError
