@@ -46,7 +46,7 @@ class Filepaths:
 
 
 @dataclass
-class TailwindStyling():
+class TailwindStyling:
     """Class that contains all the curated styling chosen for GUI components"""
 
     # Layout styling
@@ -101,6 +101,7 @@ def handle_text_file_upload(file: events.UploadEventArguments) -> str | None:
         text = bytes.decode("utf-8")
     except UnicodeDecodeError:
         ui.notify("File could not be read correctly")
+        text_upload.reset()
         return
     # Write to storage file
     with open(file_paths.get_user_text_fp(), "w") as f:
@@ -127,6 +128,13 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
             rgb_image = image.convert("RGB")
     except UnidentifiedImageError:
         ui.notify("Could not load image!")
+        if cover:
+            if dropdown_text_or_image.value == "Text":
+                cover_image_upload_text.reset()
+            else:
+                cover_image_upload_image.reset()
+        else:
+            secret_image_upload.reset()
         return
     # Get the extension and check that it is present and valid
     acceptable_extensions = ["jpg", "png", "jpeg"]
@@ -145,7 +153,12 @@ def handle_image_upload(img: events.UploadEventArguments, cover=False):
     rgb_image.save(fp, format="PNG")
 
 
-def encrypt_event(e: events.ClickEventArguments, value: str, upload: str, text_input: str | None = None):
+def encrypt_event(
+    e: events.ClickEventArguments,
+    value: str,
+    upload: str,
+    text_input: str | None = None,
+):
     """Function that checks if conditions for encryption are met and calls encrypt fucntion
 
     This function will check whether text or image is being encrypted into the cover_image.
@@ -171,6 +184,7 @@ def encrypt_event(e: events.ClickEventArguments, value: str, upload: str, text_i
             cimg.load()
     except InvalidFileError:
         ui.notify("Cover image file cannot be read!")
+        cover_image_upload_image.reset()
         return
         # Check if user image is larger than cover image, resize if it is
     if value == "Image":
@@ -180,12 +194,15 @@ def encrypt_event(e: events.ClickEventArguments, value: str, upload: str, text_i
                 uimg.load()
         except InvalidFileError:
             ui.notify("Encryption image file cannot be read!")
+            secret_image_upload.reset()
             return
         # Check sizes
         if uimg.size[0] > cimg.size[0] or uimg.size[1] > cimg.size[1]:
             with ui.dialog() as dialog, ui.card():
-                ui.label("The image you want to encrypt is larger than the cover \
-                         image in one or both dimensions. It will be resized.")
+                ui.label(
+                    "The image you want to encrypt is larger than the cover \
+                         image in one or both dimensions. It will be resized."
+                )
                 with ui.row():
                     ui.button("Continue", on_click=dialog.close)
             dialog.open()
@@ -209,9 +226,11 @@ def encrypt_event(e: events.ClickEventArguments, value: str, upload: str, text_i
                     text_input = f.read()
             except FileNotFoundError:
                 ui.notify("Text input file not found!")
+                text_upload.reset()
                 return
             except OSError:
                 ui.notify("Error reading text input!")
+                text_upload.reset()
                 return
 
         # Call function to encrypt text into cover image
@@ -219,10 +238,13 @@ def encrypt_event(e: events.ClickEventArguments, value: str, upload: str, text_i
         # Check return value in case text is too long
         if output_image is None:
             ui.notify("Text message is too long for image!")
+            text_upload.reset()
             return
         # Only remove input if encryption succeeded
-        if os.path.exists(file_paths.get_user_text_fp()):
-            os.remove(file_paths.get_user_text_fp())
+        text_fp = file_paths.get_user_text_fp()
+        if os.path.exists(text_fp):
+            os.remove(text_fp)
+            text_upload.reset()
         # Remove output file if it exists
         if os.path.exists(image_output_fp):
             os.remove(image_output_fp)
@@ -262,6 +284,7 @@ def decrypt_event():
         # Create new output file
         with open(text_output_fp, "w") as f:
             f.write(decrypt_text)
+        cover_image_upload_text.reset()
     else:
         # Remove output file if it exists
         if os.path.exists(text_output_fp):
@@ -269,6 +292,10 @@ def decrypt_event():
         # Call the function to decrypt an image from an image
         # Save output as an image
         decrypt_image_from_image(cimg).save(image_output_fp)
+        cover_image_upload_image.reset()
+    # Flush upload prompts
+    secret_image_upload.reset()
+    decrypt_image_upload.reset()
     show_output()
 
 
@@ -297,73 +324,114 @@ with ui.row():
     dropdown_encrypt_or_decrypt = ui.select(["Encrypt", "Decrypt"], value="Encrypt")
 
 # Card with user input needed for encrypt with encrypt button
-with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Encrypt") as ed:
+with ui.card().bind_visibility_from(
+    dropdown_encrypt_or_decrypt, "value", value="Encrypt"
+) as ed:
     ed.tailwind(styles.center_card)
     # Prompt the user to select the message type
     with ui.row():
         ui.label("Choose message type:").tailwind(styles.prompt_text_h)
         dropdown_text_or_image = ui.select(["Text", "Image"], value="Text")
     # User input needed if text message type is chosen
-    with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Text"):
+    with ui.column().bind_visibility_from(
+        dropdown_text_or_image, "value", value="Text"
+    ):
         # Prompt the user for the text they want to encrypt into cover image
         with ui.row():
             ui.label("Choose message source:").tailwind(styles.prompt_text_h)
-            enter_text_or_upload = ui.select(["Enter Text", "Read Text from File"], value="Enter Text")
-        with ui.column().bind_visibility_from(enter_text_or_upload, "value", value="Enter Text"):
+            enter_text_or_upload = ui.select(
+                ["Enter Text", "Read Text from File"], value="Enter Text"
+            )
+        with ui.column().bind_visibility_from(
+            enter_text_or_upload, "value", value="Enter Text"
+        ):
             with ui.row():
                 with ui.column():
                     ui.label("Enter Text:").tailwind(styles.prompt_text_h)
                 with ui.column():
-                    text_to_encrypt = ui.textarea(label="Message", placeholder="Hello World")
+                    text_entry = text_to_encrypt = ui.textarea(
+                        label="Message", placeholder="Hello World"
+                    )
 
-        with ui.column().bind_visibility_from(enter_text_or_upload, "value", value="Read Text from File"):
+        with ui.column().bind_visibility_from(
+            enter_text_or_upload, "value", value="Read Text from File"
+        ):
             with ui.row():
                 with ui.column():
                     ui.label("Select Text File:").tailwind(styles.prompt_text_v)
-                    ui.upload(auto_upload=True, on_upload=handle_text_file_upload, max_files=1)
+                    text_upload = ui.upload(
+                        auto_upload=True, on_upload=handle_text_file_upload, max_files=1
+                    )
         # Prompt the user for the image they want to encrypt a message into
         with ui.row():
             with ui.column():
                 ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
-                ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True), max_files=1)
+                cover_image_upload_text = ui.upload(
+                    auto_upload=True,
+                    on_upload=lambda e: handle_image_upload(e, cover=True),
+                    max_files=1,
+                )
         with ui.row() as et:
             et.tailwind(styles.button_row)
-            encrypt_text_button = ui.button("Encrypt",
-                                            on_click=lambda e:
-                                            encrypt_event(e,
-                                                          dropdown_text_or_image.value,
-                                                          enter_text_or_upload.value,
-                                                          (text_to_encrypt if
-                                                           isinstance(text_to_encrypt, str)
-                                                           else text_to_encrypt.value)))
+            encrypt_text_button = ui.button(
+                "Encrypt",
+                on_click=lambda e: encrypt_event(
+                    e,
+                    dropdown_text_or_image.value,
+                    enter_text_or_upload.value,
+                    (
+                        text_to_encrypt
+                        if isinstance(text_to_encrypt, str)
+                        else text_to_encrypt.value
+                    ),
+                ),
+            )
             encrypt_text_button.tailwind(styles.button_center)
     # User input needed if image message type is chosen
-    with ui.column().bind_visibility_from(dropdown_text_or_image, "value", value="Image"):
+    with ui.column().bind_visibility_from(
+        dropdown_text_or_image, "value", value="Image"
+    ):
         # Prompt the user for the image they want to encrypt into cover image
         with ui.row():
             with ui.column():
                 ui.label("Enter Image to Encrypt:").tailwind(styles.prompt_text_v)
-                ui.upload(auto_upload=True, on_upload=handle_image_upload, max_files=1,)
+                secret_image_upload = ui.upload(
+                    auto_upload=True,
+                    on_upload=handle_image_upload,
+                    max_files=1,
+                )
         # Prompt the user for the image they want to encrypt a message into
         with ui.row():
             with ui.column():
                 ui.label("Enter Cover Image:").tailwind(styles.prompt_text_v)
-                ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True), max_files=1)
+                cover_image_upload_image = ui.upload(
+                    auto_upload=True,
+                    on_upload=lambda e: handle_image_upload(e, cover=True),
+                    max_files=1,
+                )
         with ui.row() as ei:
             ei.tailwind(styles.button_row)
-            encrypt_image_button = ui.button("Encrypt", on_click=lambda e:
-                                             encrypt_event(e, dropdown_text_or_image.value, None))
+            encrypt_image_button = ui.button(
+                "Encrypt",
+                on_click=lambda e: encrypt_event(e, dropdown_text_or_image.value, None),
+            )
             encrypt_image_button.tailwind(styles.button_center)
 
 # Card with user input needed for decrypt with decrypt button
-with ui.card().bind_visibility_from(dropdown_encrypt_or_decrypt, "value", value="Decrypt") as de:
+with ui.card().bind_visibility_from(
+    dropdown_encrypt_or_decrypt, "value", value="Decrypt"
+) as de:
     de.tailwind(styles.center_card)
     with ui.column():
         # Prompt the user for the image they want to decrypt
         with ui.row():
             with ui.column():
                 ui.label("Enter Image to Decrypt:").tailwind(styles.prompt_text_v)
-                ui.upload(auto_upload=True, on_upload=lambda e: handle_image_upload(e, cover=True), max_files=1)
+                decrypt_image_upload = ui.upload(
+                    auto_upload=True,
+                    on_upload=lambda e: handle_image_upload(e, cover=True),
+                    max_files=1,
+                )
         with ui.row() as di:
             di.tailwind(styles.button_row)
             decrypt_image_button = ui.button("Decrypt", on_click=decrypt_event)
