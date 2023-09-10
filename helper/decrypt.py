@@ -37,7 +37,17 @@ def decrypt_text_from_image(img: Image) -> tuple[str, bool]:
 
 
 def decrypt_image_from_image(image: Image) -> Image:
-    """Decrypt the secret image from the given input image"""
+    """
+    Decrypts the secret image from the given input image.
+
+    This function attempts to read the size data embedded in
+    a cover image's metadata. Failing that, it decrypts the whole image.
+    It should recover the four most significant bits of each pixel of the
+    original image.
+
+    :param image: Pillow image containing encrypted image.
+    :return: The reconstruction of the original image.
+    """
     if size := parse_exif(image.getexif()):
         width, height = size
         image = image.crop((0, 0, width, height))
