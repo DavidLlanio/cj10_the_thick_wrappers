@@ -10,7 +10,7 @@ from helper.utility import clear_least_significant_bits, image_resize
 
 def verify_encryption(cover: Image.Image, secret: Image.Image) -> None:
     """Confirms that an image can be encrypted in a given cover image and decrypted"""
-    if secret.size < cover.size:
+    if secret.size > cover.size:
         secret = image_resize(secret, cover.size, ResizeMode.SHRINK_TO_SCALE)
     encryption = encrypt.encrypt_image_to_image(cover, secret)
     decryption = decrypt.decrypt_image_from_image(encryption)
