@@ -65,4 +65,5 @@ python3 main.py
 ```
 
 Sample use of GUI:
-![In Plain Pixel](https://imgur.com/a/PvbTTmn)
+Encrypting text into an image
+![In Plain Pixel](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExenhtZHU1cGp2MmExZnk4NmZqcHV0ZHhmNHQ2ZWFsNWozdmFzbGJ4OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/O7yq741e0EFZ4lLxpW/giphy.gif)
