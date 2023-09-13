@@ -65,3 +65,4 @@ python3 main.py
 ```
 
 Sample use of GUI:
+![In Plain Pixel](https://imgur.com/a/PvbTTmn)
